@@ -120,22 +120,28 @@
     .font-picker-btn.open { background: rgba(139,115,85,0.1); }
     .font-dropdown {
       display: none;
-      position: absolute; top: 44px; right: 0;
+      position: absolute; top: 50%; right: 44px;
+      transform: translateY(-50%);
       background: rgba(246,242,236,0.97);
       backdrop-filter: blur(12px);
       border: 1px solid rgba(139,115,85,0.12);
       border-radius: 12px;
-      padding: 8px 4px;
-      box-shadow: 0 8px 32px rgba(42,37,32,0.08);
+      padding: 4px 6px;
+      box-shadow: 0 4px 20px rgba(42,37,32,0.1);
       z-index: 1000;
-      min-width: 140px;
-      animation: fadeUp 0.25s ease-out both;
+      flex-direction: row;
+      gap: 2px;
+      white-space: nowrap;
+      animation: fadeSide 0.2s ease-out both;
     }
-    .font-dropdown.show { display: block; }
+    .font-dropdown.show { display: flex; }
+    @keyframes fadeSide {
+      from { opacity: 0; transform: translateY(-50%) translateX(8px); }
+      to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+    }
     .font-option {
-      display: block; width: 100%;
-      text-align: left; font-size: 14px;
-      padding: 10px 14px;
+      font-size: 13px;
+      padding: 6px 10px;
       border: none; border-radius: 8px;
       cursor: pointer;
       background: transparent;
