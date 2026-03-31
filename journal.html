@@ -435,11 +435,11 @@
 <script>
 // ===== Font =====
 const FONTS = [
-  { key: 'serif',  label: '宋体', family: "'Noto Serif SC', serif" },
+  { key: 'serif',  label: '宋体', family: "'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif" },
   { key: 'system', label: '系统', family: "-apple-system, 'Helvetica Neue', 'PingFang SC', sans-serif" },
-  { key: 'mincho', label: '明朝', family: "'Huiwen Mincho', 'Noto Serif SC', serif" },
+  { key: 'mincho', label: '明朝', family: "'Huiwen Mincho', 'Songti SC', serif" },
 ];
-let fontIdx = parseInt(localStorage.getItem('xshan_font') || '0');
+let fontIdx = parseInt(localStorage.getItem('xshan_font2') || '0');
 
 const fontBtn = document.getElementById('fontBtn');
 const fontDrop = document.getElementById('fontDrop');
@@ -455,12 +455,23 @@ function renderFonts() {
   fontDrop.innerHTML = FONTS.map((f, i) =>
     `<button class="font-opt ${i === fontIdx ? 'active' : ''}" data-i="${i}" style="font-family:${f.family}">${f.label} · 碎碎念</button>`
   ).join('');
+
+  // 手机端：给每个选项加 touchend 处理，阻止穿透
+  fontDrop.querySelectorAll('.font-opt').forEach(btn => {
+    btn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      fontIdx = parseInt(btn.dataset.i);
+      applyFont();
+      closeFontDrop();
+    });
+  });
 }
 
 function applyFont() {
   document.documentElement.style.setProperty('--font-current', FONTS[fontIdx].family);
   document.documentElement.setAttribute('data-font', FONTS[fontIdx].key);
-  localStorage.setItem('xshan_font', fontIdx);
+  localStorage.setItem('xshan_font2', fontIdx);
   renderFonts();
 }
 
@@ -482,6 +493,7 @@ fontDrop.addEventListener('click', (e) => {
 });
 
 fontBackdrop.addEventListener('click', closeFontDrop);
+fontBackdrop.addEventListener('touchend', (e) => { e.preventDefault(); closeFontDrop(); });
 
 document.addEventListener('click', closeFontDrop);
 
