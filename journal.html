@@ -436,12 +436,27 @@ function applyFont() {
   renderFontPicker();
 }
 
+fontBtn.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  fontDropdown.classList.toggle('show');
+  fontBtn.classList.toggle('open');
+}, { passive: false });
 fontBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   fontDropdown.classList.toggle('show');
   fontBtn.classList.toggle('open');
 });
 
+fontDropdown.addEventListener('touchend', (e) => {
+  e.preventDefault(); // 阻止 iOS 幽灵点击穿透到输入框
+  const btn = e.target.closest('.font-option');
+  if (!btn) return;
+  fontIdx = parseInt(btn.dataset.idx);
+  applyFont();
+  fontDropdown.classList.remove('show');
+  fontBtn.classList.remove('open');
+}, { passive: false });
 fontDropdown.addEventListener('click', (e) => {
   e.stopPropagation();
   const btn = e.target.closest('.font-option');
@@ -452,6 +467,12 @@ fontDropdown.addEventListener('click', (e) => {
   fontBtn.classList.remove('open');
 });
 
+document.addEventListener('touchstart', (e) => {
+  if (!fontBtn.contains(e.target) && !fontDropdown.contains(e.target)) {
+    fontDropdown.classList.remove('show');
+    fontBtn.classList.remove('open');
+  }
+});
 document.addEventListener('click', () => {
   fontDropdown.classList.remove('show');
   fontBtn.classList.remove('open');
