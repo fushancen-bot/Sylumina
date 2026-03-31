@@ -458,6 +458,7 @@ fontDropdown.addEventListener('touchend', (e) => {
   fontBtn.classList.remove('open');
 }, { passive: false });
 fontDropdown.addEventListener('click', (e) => {
+  e.preventDefault();
   e.stopPropagation();
   const btn = e.target.closest('.font-option');
   if (!btn) return;
@@ -473,9 +474,11 @@ document.addEventListener('touchstart', (e) => {
     fontBtn.classList.remove('open');
   }
 });
-document.addEventListener('click', () => {
-  fontDropdown.classList.remove('show');
-  fontBtn.classList.remove('open');
+document.addEventListener('click', (e) => {
+  if (!fontBtn.contains(e.target) && !fontDropdown.contains(e.target)) {
+    fontDropdown.classList.remove('show');
+    fontBtn.classList.remove('open');
+  }
 });
 
 applyFont();
