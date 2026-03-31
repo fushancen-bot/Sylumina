@@ -242,7 +242,7 @@
     .entry-head .e-time:hover { color: rgba(139,115,85,0.6); }
     .entry p {
       font-family: var(--font-current);
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 300;
       color: var(--text-body);
       line-height: 1.9;
@@ -270,15 +270,14 @@
     .entry-edit-area {
       width: 100%;
       font-family: var(--font-current);
-      font-size: 14px;
+      font-size: 16px; /* ≥16px prevents iOS auto-zoom on focus */
       font-weight: 300;
       color: var(--text-body);
-      background: rgba(255,255,255,0.5);
-      border: 1px solid rgba(139,115,85,0.15);
-      border-radius: 8px;
-      padding: 8px 10px;
+      background: transparent;
+      border: none;
+      padding: 0;
       outline: none;
-      resize: vertical;
+      resize: none;
       line-height: 1.9;
     }
     .edit-actions {
@@ -354,7 +353,13 @@
       color: rgba(90,74,56,0.7);
     }
 
+    html[data-font="serif"] .entry p,
+    html[data-font="serif"] .entry-edit-area {
+      color: rgba(42,37,32,0.93);
+      font-weight: 400;
+    }
     html[data-font="system"] .entry p,
+    html[data-font="system"] .entry-edit-area,
     html[data-font="system"] textarea {
       color: rgba(42,37,32,0.95);
       font-weight: 400;
