@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小山的文字</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+
+  <!-- 汇文明朝体 — 把字体文件放到 /fonts/ 目录后取消注释 -->
+  <!--
+  <style>
+    @font-face {
+      font-family: 'Huiwen Mincho';
+      src: url('./fonts/HuiwenMincho.woff2') format('woff2'),
+           url('./fonts/HuiwenMincho.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+  </style>
+  -->
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font-serif: 'Noto Serif SC', serif;
+      --font-system: -apple-system, 'Helvetica Neue', 'PingFang SC', sans-serif;
+      --font-mincho: 'Huiwen Mincho', 'Noto Serif SC', serif;
+      --font-current: var(--font-serif);
+      --font-accent: 'EB Garamond', serif;
+      --font-italic: 'Crimson Pro', serif;
+
+      --bg: #f6f2ec;
+      --text-primary: #2a2520;
+      --text-body: rgba(42,37,32,0.88);
+      --text-secondary: rgba(90,74,56,0.55);
+      --text-faint: rgba(139,115,85,0.4);
+      --accent: rgba(139,115,85,1);
+      --accent-light: rgba(139,115,85,0.12);
+      --accent-faintest: rgba(139,115,85,0.07);
+      --card-bg: rgba(255,255,255,0.5);
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: var(--font-current);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Grain texture */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Ink wash decoration */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -120px; right: -80px;
+      width: 400px; height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(139,115,85,0.06) 0%, transparent 70%);
+      animation: breathe 6s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.7; }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-12px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ===== Header ===== */
+    header {
+      padding-top: 56px;
+      padding-bottom: 40px;
+      animation: fadeUp 0.8s ease-out both;
+    }
+    .header-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    h1.site-title {
+      font-family: var(--font-current);
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: 0.08em;
+    }
+    h1.site-title .underline {
+      display: inline-block;
+      border-bottom: 2px solid rgba(168,132,88,0.4);
+      padding-bottom: 2px;
+    }
+    .subtitle {
+      font-family: var(--font-italic);
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      font-style: italic;
+      animation: fadeIn 1s ease-out 0.3s both;
+    }
+
+    /* ===== Nav ===== */
+    nav {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    .nav-btn {
+      font-family: var(--font-current);
+      font-size: 13px;
+      padding: 6px 14px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: transparent;
+      color: var(--text-faint);
+    }
+    .nav-btn.active {
+      background: var(--accent-light);
+      color: rgba(90,74,56,0.85);
+      font-weight: 500;
+    }
+
+    /* ===== Font Picker ===== */
+    .font-picker-wrap { position: relative; margin-left: 4px; }
+    .font-picker-btn {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 1px solid rgba(139,115,85,0.15);
+      background: transparent;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-faint);
+      font-family: var(--font-accent);
+      font-style: italic;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .font-picker-btn.open { background: rgba(139,115,85,0.1); }
+    .font-dropdown {
+      display: none;
+      position: absolute;
+      top: 36px; right: 0;
+      background: rgba(246,242,236,0.97);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(139,115,85,0.12);
+      border-radius: 12px;
+      padding: 8px 4px;
+      box-shadow: 0 8px 32px rgba(42,37,32,0.08);
+      z-index: 100;
+      min-width: 140px;
+      animation: fadeUp 0.25s ease-out both;
+    }
+    .font-dropdown.show { display: block; }
+    .font-option {
+      display: block; width: 100%;
+      text-align: left;
+      font-size: 14px;
+      padding: 7px 14px;
+      border: none; border-radius: 8px;
+      cursor: pointer;
+      background: transparent;
+      color: rgba(90,74,56,0.6);
+      transition: all 0.15s;
+    }
+    .font-option.active {
+      background: rgba(139,115,85,0.1);
+      color: rgba(90,74,56,0.85);
+    }
+    .font-option:hover:not(.active) {
+      background: rgba(139,115,85,0.05);
+    }
+
+    /* ===== Blog List ===== */
+    .post-list article {
+      margin-bottom: 36px;
+      padding-bottom: 36px;
+      border-bottom: 1px solid rgba(139,115,85,0.1);
+      cursor: pointer;
+    }
+    .post-list article:last-child { border-bottom: none; }
+    .post-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .post-meta time {
+      font-family: var(--font-accent);
+      font-size: 13px;
+      color: var(--text-faint);
+      letter-spacing: 0.04em;
+    }
+    .post-meta .dot {
+      width: 3px; height: 3px;
+      border-radius: 50%;
+      background: rgba(139,115,85,0.25);
+    }
+    .post-title {
+      font-family: var(--font-current);
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.5;
+      margin-bottom: 10px;
+      transition: color 0.3s;
+    }
+    article:hover .post-title { color: rgba(139,115,85,0.85); }
+    .post-excerpt {
+      font-family: var(--font-current);
+      font-size: 14.5px;
+      font-weight: 300;
+      color: var(--text-body);
+      line-height: 1.85;
+      margin-bottom: 14px;
+    }
+    .post-tags { display: flex; gap: 6px; }
+    .tag {
+      font-family: var(--font-current);
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      background: var(--accent-faintest);
+      color: var(--text-secondary);
+    }
+
+    /* ===== Post Detail ===== */
+    .post-detail { animation: fadeUp 0.5s ease-out both; }
+    .back-btn {
+      font-family: var(--font-current);
+      font-size: 13px;
+      color: var(--text-faint);
+      background: none; border: none;
+      cursor: pointer;
+      padding: 0 0 24px;
+      transition: color 0.2s;
+    }
+    .back-btn:hover { color: rgba(139,115,85,0.7); }
+    .post-detail h1 {
+      font-family: var(--font-current);
+      font-size: 26px;
+      font-weight: 600;
+      line-height: 1.5;
+      margin-bottom: 32px;
+    }
+    .post-divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .post-divider .line {
+      flex: 1;
+      height: 1px;
+    }
+    .post-divider .line-l {
+      background: linear-gradient(to right, rgba(139,115,85,0.2), transparent);
+    }
+    .post-divider .line-r {
+      background: linear-gradient(to left, rgba(139,115,85,0.2), transparent);
+    }
+    .post-divider .star {
+      font-family: var(--font-accent);
+      font-size: 16px;
+      color: rgba(139,115,85,0.3);
+    }
+
+    /* Markdown content styling */
+    .post-content {
+      font-family: var(--font-current);
+      font-size: 15px;
+      font-weight: 300;
+      color: var(--text-body);
+      line-height: 2;
+    }
+    .post-content p {
+      text-indent: 2em;
+      margin-bottom: 20px;
+    }
+    .post-content h2 {
+      font-family: var(--font-current);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin: 36px 0 16px;
+      text-indent: 0;
+    }
+    .post-content hr {
+      border: none;
+      height: 1px;
+      background: rgba(139,115,85,0.12);
+      margin: 32px 0;
+    }
+    .post-content em {
+      font-family: var(--font-italic);
+      color: var(--text-secondary);
+    }
+    .post-content blockquote {
+      border-left: 2px solid rgba(139,115,85,0.2);
+      padding-left: 16px;
+      margin: 20px 0;
+      color: var(--text-secondary);
+    }
+    .post-content blockquote p { text-indent: 0; }
+
+    /* ===== Footer ===== */
+    footer {
+      padding: 48px 0 36px;
+      text-align: center;
+    }
+    footer .line {
+      width: 24px; height: 1px;
+      background: rgba(139,115,85,0.2);
+      margin: 0 auto 16px;
+    }
+    footer p {
+      font-family: var(--font-accent);
+      font-size: 12px;
+      color: rgba(139,115,85,0.3);
+      letter-spacing: 0.1em;
+    }
+
+    /* ===== Mobile ===== */
+    @media (max-width: 480px) {
+      header { padding-top: 36px; padding-bottom: 28px; }
+      h1.site-title { font-size: 22px; }
+      .post-title { font-size: 18px; }
+      .post-detail h1 { font-size: 22px; }
+    }
+
+    /* View transitions */
+    .view { display: none; }
+    .view.active { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="header-row">
+      <h1 class="site-title">
+        小山的<span class="underline" id="titleLabel">文字</span>
+      </h1>
+      <nav>
+        <div class="font-picker-wrap">
+          <button class="font-picker-btn" id="fontBtn" title="切换字体">A</button>
+          <div class="font-dropdown" id="fontDropdown"></div>
+        </div>
+      </nav>
+    </div>
+    <p class="subtitle" id="subtitle">在文字里慢慢走，不急于到达</p>
+  </header>
+
+  <!-- Blog List -->
+  <div class="view active" id="view-blog">
+    <div class="post-list" id="postList"></div>
+  </div>
+
+  <!-- Post Detail -->
+  <div class="view" id="view-post">
+    <div class="post-detail">
+      <button class="back-btn" id="backBtn">← 返回</button>
+      <time id="postDate" style="font-family:var(--font-accent);font-size:14px;color:var(--text-faint);display:block;margin-bottom:16px;"></time>
+      <h1 id="postTitle"></h1>
+      <div class="post-divider">
+        <div class="line line-l"></div>
+        <span class="star">✦</span>
+        <div class="line line-r"></div>
+      </div>
+      <div class="post-content" id="postContent"></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="line"></div>
+    <p>小山 · <span id="year"></span></p>
+  </footer>
+
+</div>
+
+<script>
+// ===== State =====
+let posts = [];
+
+const FONTS = [
+  { key: 'serif',  label: '宋体', family: "'Noto Serif SC', serif" },
+  { key: 'system', label: '系统', family: "-apple-system, 'Helvetica Neue', 'PingFang SC', sans-serif" },
+  { key: 'mincho', label: '明朝', family: "'Huiwen Mincho', 'Noto Serif SC', serif" },
+];
+let fontIdx = parseInt(localStorage.getItem('xshan_font') || '0');
+
+// ===== Font Picker =====
+const fontDropdown = document.getElementById('fontDropdown');
+const fontBtn = document.getElementById('fontBtn');
+
+function renderFontPicker() {
+  fontDropdown.innerHTML = FONTS.map((f, i) =>
+    `<button class="font-option ${i === fontIdx ? 'active' : ''}"
+       data-idx="${i}" style="font-family:${f.family}">${f.label} · 小山的文字</button>`
+  ).join('');
+}
+
+function applyFont() {
+  document.documentElement.style.setProperty('--font-current', FONTS[fontIdx].family);
+  localStorage.setItem('xshan_font', fontIdx);
+  renderFontPicker();
+}
+
+fontBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  fontDropdown.classList.toggle('show');
+  fontBtn.classList.toggle('open');
+});
+
+fontDropdown.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const btn = e.target.closest('.font-option');
+  if (!btn) return;
+  fontIdx = parseInt(btn.dataset.idx);
+  applyFont();
+  fontDropdown.classList.remove('show');
+  fontBtn.classList.remove('open');
+});
+
+document.addEventListener('click', () => {
+  fontDropdown.classList.remove('show');
+  fontBtn.classList.remove('open');
+});
+
+applyFont();
+
+// ===== Blog =====
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const months = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  return `${d.getFullYear()} · ${months[d.getMonth()]}`;
+}
+
+function renderPostList() {
+  const list = document.getElementById('postList');
+  list.innerHTML = posts.map((p, i) => `
+    <article data-id="${p.id}" style="animation: fadeUp 0.6s ease-out ${0.15*(i+1)}s both">
+      <div class="post-meta">
+        <time>${formatDate(p.date)}</time>
+        <span class="dot"></span>
+      </div>
+      <div class="post-title">${p.title}</div>
+      <p class="post-excerpt">${p.excerpt}</p>
+      <div class="post-tags">${p.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+    </article>
+  `).join('');
+
+  list.querySelectorAll('article').forEach(el => {
+    el.addEventListener('click', () => openPost(el.dataset.id));
+  });
+}
+
+async function openPost(id) {
+  const post = posts.find(p => p.id === id);
+  if (!post) return;
+
+  try {
+    const res = await fetch(`./posts/${id}.md`);
+    const md = await res.text();
+    document.getElementById('postDate').textContent = formatDate(post.date);
+    document.getElementById('postTitle').textContent = post.title;
+    document.getElementById('postContent').innerHTML = marked.parse(md);
+    document.getElementById('view-blog').classList.remove('active');
+    document.getElementById('view-post').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err) {
+    console.error('Failed to load post:', err);
+  }
+}
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  document.getElementById('view-post').classList.remove('active');
+  document.getElementById('view-blog').classList.add('active');
+});
+
+// Load posts
+fetch('./posts.json')
+  .then(r => r.json())
+  .then(data => {
+    posts = data;
+    renderPostList();
+  })
+  .catch(err => console.error('Failed to load posts:', err));
+
+// ===== Year =====
+document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>
