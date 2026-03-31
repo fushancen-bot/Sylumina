@@ -456,15 +456,18 @@ function renderFonts() {
     `<button class="font-opt ${i === fontIdx ? 'active' : ''}" data-i="${i}" style="font-family:${f.family}">${f.label} · 碎碎念</button>`
   ).join('');
 
-  // 手机端：给每个选项加 touchend 处理，阻止穿透
   fontDrop.querySelectorAll('.font-opt').forEach(btn => {
+    btn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, { passive: false });
     btn.addEventListener('touchend', (e) => {
       e.preventDefault();
       e.stopPropagation();
       fontIdx = parseInt(btn.dataset.i);
       applyFont();
       closeFontDrop();
-    });
+    }, { passive: false });
   });
 }
 
