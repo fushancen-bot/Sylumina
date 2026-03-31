@@ -127,13 +127,7 @@
     }
     .font-drop.show { display: block; }
     /* 透明遮罩，防止手机上点击穿透到下方输入框 */
-    .font-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 99;
-    }
-    .font-backdrop.show { display: block; }
+
     .font-opt {
       display: block; width: 100%;
       text-align: left; font-size: 14px;
@@ -396,7 +390,7 @@
   <header>
     <h1>小山的<span class="accent">碎碎念</span></h1>
     <div class="font-wrap">
-      <div class="font-backdrop" id="fontBackdrop"></div>
+
       <button class="font-btn" id="fontBtn">A</button>
       <div class="font-drop" id="fontDrop"></div>
     </div>
@@ -443,32 +437,11 @@ let fontIdx = parseInt(localStorage.getItem('xshan_font2') || '0');
 
 const fontBtn = document.getElementById('fontBtn');
 const fontDrop = document.getElementById('fontDrop');
-const fontBackdrop = document.getElementById('fontBackdrop');
-
-function closeFontDrop() {
-  fontDrop.classList.remove('show');
-  fontBtn.classList.remove('open');
-  fontBackdrop.classList.remove('show');
-}
 
 function renderFonts() {
   fontDrop.innerHTML = FONTS.map((f, i) =>
     `<button class="font-opt ${i === fontIdx ? 'active' : ''}" data-i="${i}" style="font-family:${f.family}">${f.label} · 碎碎念</button>`
   ).join('');
-
-  fontDrop.querySelectorAll('.font-opt').forEach(btn => {
-    btn.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    }, { passive: false });
-    btn.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      fontIdx = parseInt(btn.dataset.i);
-      applyFont();
-      closeFontDrop();
-    }, { passive: false });
-  });
 }
 
 function applyFont() {
@@ -480,10 +453,8 @@ function applyFont() {
 
 fontBtn.addEventListener('click', (e) => {
   e.stopPropagation();
-  const opening = !fontDrop.classList.contains('show');
   fontDrop.classList.toggle('show');
   fontBtn.classList.toggle('open');
-  fontBackdrop.classList.toggle('show', opening);
 });
 
 fontDrop.addEventListener('click', (e) => {
@@ -492,13 +463,14 @@ fontDrop.addEventListener('click', (e) => {
   if (!b) return;
   fontIdx = parseInt(b.dataset.i);
   applyFont();
-  closeFontDrop();
+  fontDrop.classList.remove('show');
+  fontBtn.classList.remove('open');
 });
 
-fontBackdrop.addEventListener('click', closeFontDrop);
-fontBackdrop.addEventListener('touchend', (e) => { e.preventDefault(); closeFontDrop(); });
-
-document.addEventListener('click', closeFontDrop);
+document.addEventListener('click', () => {
+  fontDrop.classList.remove('show');
+  fontBtn.classList.remove('open');
+});
 
 applyFont();
 
