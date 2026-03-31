@@ -226,9 +226,9 @@
       line-height: 1.9;
       white-space: pre-wrap;
     }
-    .entry .del {
+    .entry .del, .entry .edit-btn {
       position: absolute;
-      top: 0; right: 0;
+      top: 0;
       background: none; border: none;
       font-size: 11px;
       color: rgba(139,115,85,0.2);
@@ -236,8 +236,64 @@
       opacity: 0;
       transition: all 0.2s;
     }
-    .entry:hover .del { opacity: 1; }
+    .entry .del { right: 0; }
+    .entry .edit-btn { right: 36px; }
+    .entry:hover .del,
+    .entry:hover .edit-btn { opacity: 1; }
     .entry .del:hover { color: rgba(180,80,80,0.6); }
+    .entry .edit-btn:hover { color: rgba(90,74,56,0.6); }
+
+    /* Inline edit mode */
+    .entry.editing .edit-btn { opacity: 1; color: rgba(90,74,56,0.5); }
+    .entry-edit-area {
+      width: 100%;
+      font-family: var(--font-current);
+      font-size: 14px;
+      font-weight: 300;
+      color: var(--text-body);
+      background: rgba(255,255,255,0.5);
+      border: 1px solid rgba(139,115,85,0.15);
+      border-radius: 8px;
+      padding: 8px 10px;
+      outline: none;
+      resize: vertical;
+      line-height: 1.9;
+    }
+    .edit-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .edit-save, .edit-cancel {
+      font-family: var(--font-current);
+      font-size: 11px;
+      padding: 4px 14px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .edit-save {
+      background: rgba(90,74,56,0.8);
+      color: #f6f2ec;
+    }
+    .edit-cancel {
+      background: rgba(139,115,85,0.1);
+      color: rgba(90,74,56,0.6);
+    }
+
+    /* Clickable time */
+    .e-time {
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .e-time:hover { color: rgba(139,115,85,0.6) !important; }
+    .e-edited {
+      font-family: var(--font-accent);
+      font-size: 11px;
+      color: rgba(139,115,85,0.35);
+      font-style: italic;
+    }
     .empty {
       text-align: center;
       padding: 48px 0;
@@ -299,30 +355,6 @@
       font-weight: 400;
     }
 
-    .backup-bar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-    .backup-btn {
-      font-family: var(--font-accent);
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      color: rgba(139,115,85,0.4);
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 2px 0;
-      transition: color 0.2s;
-    }
-    .backup-btn:hover { color: rgba(90,74,56,0.65); }
-    .backup-dot {
-      font-size: 11px;
-      color: rgba(139,115,85,0.2);
-    }
-
     footer {
       padding: 48px 0 36px;
       text-align: center;
@@ -382,12 +414,6 @@
 
   <footer>
     <div class="line"></div>
-    <div class="backup-bar">
-      <button class="backup-btn" id="exportBtn">导出备份</button>
-      <span class="backup-dot">·</span>
-      <button class="backup-btn" id="importBtn">导入备份</button>
-      <input type="file" id="importFile" accept=".json" style="display:none">
-    </div>
     <p>只有你自己能看到这些</p>
   </footer>
 </div>
@@ -489,14 +515,19 @@ function render() {
     }
 
     const escaped = entry.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const editedLabel = entry.editedAt
+      ? `<span class="e-edited" id="edited-${i}" style="display:none">编辑于 ${fmtDate(entry.editedAt).time}</span>`
+      : '';
     html += `
-      <div class="entry" style="animation: slideIn 0.4s ease-out ${Math.min(0.08*i, 0.6)}s both">
+      <div class="entry" id="entry-${i}" style="animation: slideIn 0.4s ease-out ${Math.min(0.08*i, 0.6)}s both">
         <div class="entry-head">
           <span class="e-mood">${entry.mood || '💭'}</span>
           <span class="e-date">${date}</span>
-          <span class="e-time">${time}</span>
+          <span class="e-time" data-i="${i}" title="点击查看编辑时间">${time}</span>
+          ${editedLabel}
         </div>
-        <p>${escaped}</p>
+        <p id="text-${i}">${escaped}</p>
+        <button class="edit-btn" data-i="${i}">编辑</button>
         <button class="del" data-i="${i}">删除</button>
       </div>
     `;
@@ -511,6 +542,54 @@ function render() {
       entries.splice(parseInt(btn.dataset.i), 1);
       saveEntries(entries);
       render();
+    });
+  });
+
+  // Edit button
+  el.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.i);
+      const entryEl = document.getElementById(`entry-${i}`);
+      const textEl = document.getElementById(`text-${i}`);
+      const entries = getEntries();
+      const entry = entries[i];
+
+      if (entryEl.classList.contains('editing')) return;
+      entryEl.classList.add('editing');
+
+      const textarea = document.createElement('textarea');
+      textarea.className = 'entry-edit-area';
+      textarea.value = entry.content;
+      textarea.rows = Math.max(3, entry.content.split('\n').length);
+
+      const actions = document.createElement('div');
+      actions.className = 'edit-actions';
+      actions.innerHTML = `<button class="edit-save">保存</button><button class="edit-cancel">取消</button>`;
+
+      textEl.replaceWith(textarea);
+      textarea.after(actions);
+      textarea.focus();
+
+      actions.querySelector('.edit-cancel').addEventListener('click', () => render());
+      actions.querySelector('.edit-save').addEventListener('click', () => {
+        const newContent = textarea.value.trim();
+        if (!newContent) return;
+        entries[i].content = newContent;
+        entries[i].editedAt = Date.now();
+        saveEntries(entries);
+        render();
+      });
+    });
+  });
+
+  // Click time to toggle edited time
+  el.querySelectorAll('.e-time').forEach(span => {
+    span.addEventListener('click', () => {
+      const i = parseInt(span.dataset.i);
+      const editedEl = document.getElementById(`edited-${i}`);
+      if (!editedEl) return;
+      const visible = editedEl.style.display !== 'none';
+      editedEl.style.display = visible ? 'none' : 'inline';
     });
   });
 }
@@ -566,48 +645,13 @@ saveBtnEl.addEventListener('click', () => {
   render();
 });
 
-// ===== Export / Import =====
-document.getElementById('exportBtn').addEventListener('click', () => {
-  const entries = getEntries();
-  const blob = new Blob([JSON.stringify({ version: 1, exported: new Date().toISOString(), entries }, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const date = new Date().toISOString().slice(0,10);
-  a.href = url; a.download = `碎碎念备份_${date}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+// ===== Keyboard shortcut =====
+textEl.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    saveBtnEl.click();
+  }
 });
 
-document.getElementById('importBtn').addEventListener('click', () => {
-  document.getElementById('importFile').click();
-});
-
-document.getElementById('importFile').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    try {
-      const data = JSON.parse(ev.target.result);
-      const incoming = data.entries || data;
-      if (!Array.isArray(incoming)) throw new Error();
-      const existing = getEntries();
-      const existingIds = new Set(existing.map(x => x.timestamp));
-      const merged = [...incoming.filter(x => !existingIds.has(x.timestamp)), ...existing];
-      merged.sort((a, b) => b.timestamp - a.timestamp);
-      saveEntries(merged);
-      render();
-      toastEmoji.textContent = '🌿';
-      document.querySelector('.t-text').textContent = `导入了 ${incoming.length} 条`;
-      toast.classList.add('show');
-      setTimeout(() => { toast.classList.remove('show'); document.querySelector('.t-text').textContent = '记下了'; }, 1800);
-    } catch { alert('文件格式不对，请选择之前导出的备份文件'); }
-    e.target.value = '';
-  };
-  reader.readAsText(file);
-});
-
-// ===== Init =====
 render();
 </script>
 
