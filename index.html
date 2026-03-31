@@ -227,7 +227,7 @@
     .post-meta time {
       font-family: var(--font-accent);
       font-size: 13px;
-      color: var(--text-faint);
+      color: rgba(139,115,85,0.58);
       letter-spacing: 0.04em;
     }
     .post-meta .dot {
@@ -367,6 +367,39 @@
       .post-detail h1 { font-size: 22px; }
     }
 
+    /* System font — darken body text for readability */
+    html[data-font="system"] .post-excerpt,
+    html[data-font="system"] .post-content,
+    html[data-font="system"] textarea {
+      color: rgba(42,37,32,0.95);
+      font-weight: 400;
+    }
+
+    /* Hidden post unlock button */
+    .unlock-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      color: rgba(139,115,85,0.25);
+      margin-left: 8px;
+      transition: color 0.2s;
+      padding: 0;
+    }
+    .unlock-btn:hover { color: rgba(139,115,85,0.5); }
+    .unlock-btn.active { color: rgba(139,115,85,0.7); }
+
+    /* Hidden post indicator badge */
+    .hidden-badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 8px;
+      background: rgba(139,115,85,0.08);
+      color: rgba(139,115,85,0.45);
+      border: 1px dashed rgba(139,115,85,0.2);
+      margin-left: 4px;
+    }
+
     /* View transitions */
     .view { display: none; }
     .view.active { display: block; }
@@ -414,7 +447,7 @@
 
   <footer>
     <div class="line"></div>
-    <p>小山 · <span id="year"></span></p>
+    <p>小山 · <span id="year"></span> <button class="unlock-btn" id="unlockBtn" title="显示/隐藏私密文章">🔒</button></p>
   </footer>
 
 </div>
@@ -443,6 +476,7 @@ function renderFontPicker() {
 
 function applyFont() {
   document.documentElement.style.setProperty('--font-current', FONTS[fontIdx].family);
+  document.documentElement.setAttribute('data-font', FONTS[fontIdx].key);
   localStorage.setItem('xshan_font', fontIdx);
   renderFontPicker();
 }
@@ -477,13 +511,25 @@ function formatDate(dateStr) {
   return `${d.getFullYear()} · ${months[d.getMonth()]}`;
 }
 
+// ===== Hidden posts unlock =====
+let showHidden = false;
+const unlockBtn = document.getElementById('unlockBtn');
+unlockBtn.addEventListener('click', () => {
+  showHidden = !showHidden;
+  unlockBtn.classList.toggle('active', showHidden);
+  unlockBtn.textContent = showHidden ? '🔓' : '🔒';
+  renderPostList();
+});
+
 function renderPostList() {
   const list = document.getElementById('postList');
-  list.innerHTML = posts.map((p, i) => `
+  const visible = posts.filter(p => showHidden ? true : !p.hidden);
+  list.innerHTML = visible.map((p, i) => `
     <article data-id="${p.id}" style="animation: fadeUp 0.6s ease-out ${0.15*(i+1)}s both">
       <div class="post-meta">
         <time>${formatDate(p.date)}</time>
         <span class="dot"></span>
+        ${p.hidden ? '<span class="hidden-badge">私密</span>' : ''}
       </div>
       <div class="post-title">${p.title}</div>
       <p class="post-excerpt">${p.excerpt}</p>
