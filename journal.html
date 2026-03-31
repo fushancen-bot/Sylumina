@@ -4,19 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>碎碎念</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
-
   <style>
+    /* 汇文明朝体 — 与 HTML 文件放在同一文件夹即可 */
+    @font-face {
+      font-family: 'Huiwen Mincho';
+      src: url('./汇文明朝体.otf') format('opentype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --font-serif: 'Noto Serif SC', serif;
+      --font-serif: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
       --font-system: -apple-system, 'Helvetica Neue', 'PingFang SC', sans-serif;
-      --font-mincho: 'Huiwen Mincho', 'Noto Serif SC', serif;
+      --font-mincho: 'Huiwen Mincho', 'Songti SC', serif;
       --font-current: var(--font-serif);
-      --font-accent: 'EB Garamond', serif;
-      --font-italic: 'Crimson Pro', serif;
+      --font-accent: 'EB Garamond', Georgia, serif;
+      --font-italic: 'Crimson Pro', Georgia, serif;
 
       --bg: #f6f2ec;
       --text-primary: #2a2520;
@@ -121,6 +126,14 @@
       animation: fadeUp 0.25s ease-out both;
     }
     .font-drop.show { display: block; }
+    /* 透明遮罩，防止手机上点击穿透到下方输入框 */
+    .font-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 99;
+    }
+    .font-backdrop.show { display: block; }
     .font-opt {
       display: block; width: 100%;
       text-align: left; font-size: 14px;
@@ -383,6 +396,7 @@
   <header>
     <h1>小山的<span class="accent">碎碎念</span></h1>
     <div class="font-wrap">
+      <div class="font-backdrop" id="fontBackdrop"></div>
       <button class="font-btn" id="fontBtn">A</button>
       <div class="font-drop" id="fontDrop"></div>
     </div>
@@ -429,6 +443,13 @@ let fontIdx = parseInt(localStorage.getItem('xshan_font') || '0');
 
 const fontBtn = document.getElementById('fontBtn');
 const fontDrop = document.getElementById('fontDrop');
+const fontBackdrop = document.getElementById('fontBackdrop');
+
+function closeFontDrop() {
+  fontDrop.classList.remove('show');
+  fontBtn.classList.remove('open');
+  fontBackdrop.classList.remove('show');
+}
 
 function renderFonts() {
   fontDrop.innerHTML = FONTS.map((f, i) =>
@@ -445,8 +466,10 @@ function applyFont() {
 
 fontBtn.addEventListener('click', (e) => {
   e.stopPropagation();
+  const opening = !fontDrop.classList.contains('show');
   fontDrop.classList.toggle('show');
   fontBtn.classList.toggle('open');
+  fontBackdrop.classList.toggle('show', opening);
 });
 
 fontDrop.addEventListener('click', (e) => {
@@ -455,14 +478,12 @@ fontDrop.addEventListener('click', (e) => {
   if (!b) return;
   fontIdx = parseInt(b.dataset.i);
   applyFont();
-  fontDrop.classList.remove('show');
-  fontBtn.classList.remove('open');
+  closeFontDrop();
 });
 
-document.addEventListener('click', () => {
-  fontDrop.classList.remove('show');
-  fontBtn.classList.remove('open');
-});
+fontBackdrop.addEventListener('click', closeFontDrop);
+
+document.addEventListener('click', closeFontDrop);
 
 applyFont();
 
