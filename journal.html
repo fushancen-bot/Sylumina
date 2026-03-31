@@ -165,7 +165,7 @@
       width: 100%;
       min-height: 90px;
       font-family: var(--font-current);
-      font-size: 14.5px;
+      font-size: 16px;
       font-weight: 300;
       color: var(--text-primary);
       background: transparent;
@@ -380,6 +380,26 @@
       color: rgba(139,115,85,0.3);
       letter-spacing: 0.1em;
     }
+    .data-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .data-btn {
+      font-family: var(--font-current);
+      font-size: 11px;
+      color: rgba(139,115,85,0.4);
+      background: none;
+      border: 1px solid rgba(139,115,85,0.15);
+      border-radius: 12px;
+      padding: 4px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .data-btn:hover { color: rgba(90,74,56,0.6); border-color: rgba(139,115,85,0.3); }
 
     @media (max-width: 480px) {
       header { padding-top: 36px; }
@@ -423,6 +443,11 @@
   <footer>
     <div class="line"></div>
     <p>只有你自己能看到这些</p>
+    <div class="data-actions">
+      <button class="data-btn" id="exportBtn">导出备份</button>
+      <button class="data-btn" id="importBtn">导入数据</button>
+      <input type="file" id="importFile" accept=".json" style="display:none">
+    </div>
   </footer>
 </div>
 
@@ -649,6 +674,61 @@ textEl.addEventListener('keydown', (e) => {
 });
 
 render();
+
+// ===== Export / Import =====
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const entries = getEntries();
+  const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const d = new Date();
+  const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `碎碎念-${dateStr}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('importBtn').addEventListener('click', () => {
+  document.getElementById('importFile').click();
+});
+
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (!Array.isArray(imported)) throw new Error();
+      const existing = getEntries();
+      const existingIds = new Set(existing.map(x => x.timestamp));
+      const merged = [...existing];
+      let added = 0;
+      imported.forEach(entry => {
+        if (!existingIds.has(entry.timestamp)) {
+          merged.push(entry);
+          added++;
+        }
+      });
+      merged.sort((a, b) => b.timestamp - a.timestamp);
+      saveEntries(merged);
+      render();
+      toastEmoji.textContent = '📦';
+      document.querySelector('.t-text').textContent = `导入了 ${added} 条`;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+        document.querySelector('.t-text').textContent = '记下了';
+        toastEmoji.textContent = '✨';
+      }, 1800);
+    } catch {
+      alert('文件格式不对，请选择之前导出的 JSON 文件');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
 </script>
 
 </body>
