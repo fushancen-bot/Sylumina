@@ -405,6 +405,83 @@
     }
     .data-btn:hover { color: rgba(90,74,56,0.6); border-color: rgba(139,115,85,0.3); }
 
+    /* ===== Filter bar ===== */
+    .filter-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .filter-btns {
+      display: flex;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+    .filter-toggle {
+      background: none;
+      border: none;
+      font-size: 16px;
+      color: rgba(139,115,85,0.3);
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 8px;
+      transition: all 0.2s;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      line-height: 1;
+    }
+    .filter-toggle:hover { color: rgba(139,115,85,0.65); }
+    .filter-toggle.active { color: rgba(139,115,85,0.8); background: rgba(139,115,85,0.1); }
+    .search-wrap {
+      display: none;
+      align-items: center;
+      position: relative;
+    }
+    .search-wrap.show { display: flex; }
+    #searchInput {
+      width: 100%;
+      font-family: var(--font-current);
+      font-size: 16px;
+      font-weight: 300;
+      color: var(--text-primary);
+      background: var(--card-bg);
+      border: 1px solid rgba(139,115,85,0.12);
+      border-radius: 12px;
+      padding: 10px 40px 10px 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #searchInput:focus { border-color: rgba(139,115,85,0.28); }
+    .search-clear {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      font-size: 15px;
+      color: rgba(139,115,85,0.35);
+      cursor: pointer;
+      padding: 4px;
+      touch-action: manipulation;
+      line-height: 1;
+    }
+
+    /* ===== Star button ===== */
+    .entry .star-btn {
+      position: absolute;
+      top: 0; right: 72px;
+      background: none; border: none;
+      font-size: 12px;
+      color: rgba(139,115,85,0.2);
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.2s;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .entry:hover .star-btn { opacity: 1; }
+    .entry.starred .star-btn { opacity: 1; color: rgba(168,132,88,0.75); }
+    .entry.starred { border-left-color: rgba(168,132,88,0.45); }
+
     @media (max-width: 480px) {
       header { padding-top: 36px; }
       h1 { font-size: 22px; }
@@ -427,13 +504,24 @@
     <textarea id="text" placeholder="此刻在想什么…"></textarea>
     <div class="toolbar">
       <div class="moods" id="moods">
-        <button class="mood-btn" data-m="🌟">🌟</button>
         <button class="mood-btn" data-m="☀️">☀️</button>
+        <button class="mood-btn" data-m="🌧️">🌧️</button>
         <button class="mood-btn" data-m="🌿">🌿</button>
         <button class="mood-btn" data-m="☁️">☁️</button>
         <button class="mood-btn" data-m="🌙">🌙</button>
       </div>
       <button class="save-btn" id="saveBtn">记下</button>
+    </div>
+  </div>
+
+  <div class="filter-bar" id="filterBar">
+    <div class="search-wrap" id="searchWrap">
+      <input type="text" id="searchInput" placeholder="搜索碎碎念…" autocomplete="off">
+      <button class="search-clear" id="searchClear">✕</button>
+    </div>
+    <div class="filter-btns">
+      <button class="filter-toggle" id="searchToggle" title="搜索">⌕</button>
+      <button class="filter-toggle" id="starFilter" title="只看星标">☆</button>
     </div>
   </div>
 
@@ -448,7 +536,8 @@
     <div class="line"></div>
     <p>只有你自己能看到这些</p>
     <div class="data-actions">
-      <button class="data-btn" id="exportBtn">导出备份</button>
+      <button class="data-btn" id="exportJsonBtn">导出 JSON</button>
+      <button class="data-btn" id="exportMdBtn">导出 MD</button>
       <button class="data-btn" id="importBtn">导入数据</button>
       <input type="file" id="importFile" accept=".json" style="display:none">
     </div>
@@ -529,19 +618,33 @@ function todayKey() {
   return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
 }
 
+let searchQuery = '';
+let starOnly = false;
+
 function render() {
   const el = document.getElementById('entries');
-  const entries = getEntries();
+  const allEntries = getEntries();
 
-  if (!entries.length) {
-    el.innerHTML = '<div class="empty">还没有碎碎念…<br>写下第一条吧 ✨</div>';
+  // Filter with original index preserved
+  let filtered = allEntries.map((entry, i) => ({ entry, i }));
+  if (starOnly) filtered = filtered.filter(({ entry }) => entry.starred);
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(({ entry }) => entry.content.toLowerCase().includes(q));
+  }
+
+  if (!filtered.length) {
+    const msg = searchQuery
+      ? `没有找到「${searchQuery}」`
+      : starOnly ? '还没有星标条目 ☆' : '还没有碎碎念…<br>写下第一条吧 ✨';
+    el.innerHTML = `<div class="empty">${msg}</div>`;
     return;
   }
 
   let html = '';
   let lastDateKey = '';
 
-  entries.forEach((entry, i) => {
+  filtered.forEach(({ entry, i }, fi) => {
     const { date, time, dateKey } = fmtDate(entry.timestamp);
 
     if (dateKey !== lastDateKey) {
@@ -555,7 +658,7 @@ function render() {
       ? `<span class="e-edited" id="edited-${i}" style="display:none">编辑于 ${fmtDate(entry.editedAt).time}</span>`
       : '';
     html += `
-      <div class="entry" id="entry-${i}" style="animation: slideIn 0.4s ease-out ${Math.min(0.08*i, 0.6)}s both">
+      <div class="entry ${entry.starred ? 'starred' : ''}" id="entry-${i}" style="animation: slideIn 0.4s ease-out ${Math.min(0.08*fi, 0.6)}s both">
         <div class="entry-head">
           <span class="e-mood">${entry.mood || '💭'}</span>
           <span class="e-date">${date}</span>
@@ -563,6 +666,7 @@ function render() {
           ${editedLabel}
         </div>
         <p id="text-${i}">${escaped}</p>
+        <button class="star-btn" data-i="${i}">${entry.starred ? '★' : '☆'}</button>
         <button class="edit-btn" data-i="${i}">编辑</button>
         <button class="del" data-i="${i}">删除</button>
       </div>
@@ -570,6 +674,16 @@ function render() {
   });
 
   el.innerHTML = html;
+
+  el.querySelectorAll('.star-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const entries = getEntries();
+      const i = parseInt(btn.dataset.i);
+      entries[i].starred = !entries[i].starred;
+      saveEntries(entries);
+      render();
+    });
+  });
 
   el.querySelectorAll('.del').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -679,18 +793,80 @@ textEl.addEventListener('keydown', (e) => {
 
 render();
 
+// ===== Search & Star filter =====
+const searchToggle = document.getElementById('searchToggle');
+const starFilterBtn = document.getElementById('starFilter');
+const searchWrap = document.getElementById('searchWrap');
+const searchInput = document.getElementById('searchInput');
+const searchClear = document.getElementById('searchClear');
+
+searchToggle.addEventListener('click', () => {
+  const open = searchWrap.classList.toggle('show');
+  searchToggle.classList.toggle('active', open);
+  if (open) {
+    searchInput.focus();
+  } else {
+    searchQuery = '';
+    searchInput.value = '';
+    render();
+  }
+});
+
+searchInput.addEventListener('input', () => {
+  searchQuery = searchInput.value.trim();
+  render();
+});
+
+searchClear.addEventListener('click', () => {
+  searchQuery = '';
+  searchInput.value = '';
+  searchInput.focus();
+  render();
+});
+
+starFilterBtn.addEventListener('click', () => {
+  starOnly = !starOnly;
+  starFilterBtn.classList.toggle('active', starOnly);
+  starFilterBtn.textContent = starOnly ? '★' : '☆';
+  render();
+});
+
 // ===== Export / Import =====
-document.getElementById('exportBtn').addEventListener('click', () => {
-  const entries = getEntries();
-  const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+function exportFile(content, filename, type) {
+  const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
-  const d = new Date();
-  const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const a = document.createElement('a');
   a.href = url;
-  a.download = `碎碎念-${dateStr}.json`;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function dateStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+document.getElementById('exportJsonBtn').addEventListener('click', () => {
+  exportFile(JSON.stringify(getEntries(), null, 2), `碎碎念-${dateStr()}.json`, 'application/json');
+});
+
+document.getElementById('exportMdBtn').addEventListener('click', () => {
+  const entries = getEntries();
+  let md = '# 碎碎念\n\n';
+  let lastDateKey = '';
+  entries.forEach(entry => {
+    const { date, time, dateKey } = fmtDate(entry.timestamp);
+    if (dateKey !== lastDateKey) {
+      md += `\n## ${date}\n\n`;
+      lastDateKey = dateKey;
+    }
+    md += `**${time}**`;
+    if (entry.mood && entry.mood !== '💭') md += ` · ${entry.mood}`;
+    if (entry.starred) md += ` · ★`;
+    md += `\n\n${entry.content}\n\n---\n\n`;
+  });
+  exportFile(md, `碎碎念-${dateStr()}.md`, 'text/markdown');
 });
 
 document.getElementById('importBtn').addEventListener('click', () => {
