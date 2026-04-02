@@ -1,0 +1,18 @@
+{
+  "name": "碎碎念",
+  "short_name": "碎碎念",
+  "description": "只有你自己能看到这些",
+  "start_url": "/journal.html",
+  "display": "standalone",
+  "background_color": "#f6f2ec",
+  "theme_color": "#f6f2ec",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
