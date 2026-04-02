@@ -9,7 +9,7 @@
   "lang": "zh-CN",
   "icons": [
     {
-      "src": "./icon.png.png",
+      "src": "./icon.png",
       "sizes": "any",
       "type": "image/png",
       "purpose": "any maskable"
