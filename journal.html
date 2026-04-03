@@ -619,6 +619,19 @@ function fmtDate(ts) {
   };
 }
 
+function fmtEditedAt(ts) {
+  const d = new Date(ts);
+  const time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const edited = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = Math.round((today - edited) / 86400000);
+  if (diff === 0) return time;
+  if (diff === 1) return `昨天 ${time}`;
+  if (diff === 2) return `前天 ${time}`;
+  return `${d.getMonth()+1}月${d.getDate()}日 ${time}`;
+}
+
 function todayKey() {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
@@ -661,7 +674,7 @@ function render() {
 
     const escaped = entry.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const editedLabel = entry.editedAt
-      ? `<span class="e-edited" id="edited-${i}" style="display:none">编辑于 ${fmtDate(entry.editedAt).time}</span>`
+      ? `<span class="e-edited" id="edited-${i}" style="display:none">编辑于 ${fmtEditedAt(entry.editedAt)}</span>`
       : '';
     html += `
       <div class="entry ${entry.starred ? 'starred' : ''}" id="entry-${i}" style="animation: slideIn 0.4s ease-out ${Math.min(0.08*fi, 0.6)}s both">
