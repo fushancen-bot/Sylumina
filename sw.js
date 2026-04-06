@@ -1,19 +1,17 @@
-const CACHE = 'sylumina-journal-v1';
+const CACHE = 'sylumina-journal-v2';
 
 const PRECACHE = [
-  './journal.html',
   './%E6%B1%87%E6%96%87%E6%98%8E%E6%9C%9D%E4%BD%93.otf',
   './manifest.json',
-  './icon.svg',
+  './icon.png',
 ];
 
-// Install: cache core assets
+// Install: cache static assets (not HTML — HTML is always fetched fresh)
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE).then(cache => {
-      // Cache each asset individually so one failure doesn't block the rest
-      return Promise.allSettled(PRECACHE.map(url => cache.add(url)));
-    })
+    caches.open(CACHE).then(cache =>
+      Promise.allSettled(PRECACHE.map(url => cache.add(url)))
+    )
   );
   self.skipWaiting();
 });
@@ -28,11 +26,11 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch: cache-first for same-origin, stale-while-revalidate for Google Fonts
+// Fetch strategy
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Google Fonts: serve from cache if available, update in background
+  // Google Fonts: cache then update in background
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
     event.respondWith(
       caches.open(CACHE).then(async cache => {
@@ -47,18 +45,32 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Same-origin assets: cache-first, fall back to network
-  if (url.origin === self.location.origin) {
+  if (url.origin !== self.location.origin) return;
+
+  // HTML: network-first so updates always show immediately;
+  // fall back to cache only when truly offline
+  if (event.request.destination === 'document' || url.pathname.endsWith('.html')) {
     event.respondWith(
-      caches.match(event.request).then(cached => {
-        if (cached) return cached;
-        return fetch(event.request).then(res => {
-          if (res.ok) {
-            caches.open(CACHE).then(cache => cache.put(event.request, res.clone()));
-          }
-          return res;
-        });
-      })
+      fetch(event.request).then(res => {
+        if (res.ok) {
+          caches.open(CACHE).then(cache => cache.put(event.request, res.clone()));
+        }
+        return res;
+      }).catch(() => caches.match(event.request))
     );
+    return;
   }
+
+  // Other assets (fonts, icons): cache-first
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
+      return fetch(event.request).then(res => {
+        if (res.ok) {
+          caches.open(CACHE).then(cache => cache.put(event.request, res.clone()));
+        }
+        return res;
+      });
+    })
+  );
 });
