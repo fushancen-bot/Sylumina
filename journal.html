@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>碎碎念</title>
   <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="碎碎念">
@@ -272,7 +273,7 @@
     .entry-head .e-time {
       font-family: var(--font-accent);
       font-size: 12px;
-      color: rgba(139,115,85,0.3);
+      color: rgba(90,74,56,0.5);
       cursor: pointer;
       transition: color 0.2s;
     }
@@ -426,9 +427,9 @@
     }
     .log-text.done {
       font-weight: 300;
-      color: var(--text-faint);
+      color: rgba(90,74,56,0.45);
       text-decoration: line-through;
-      text-decoration-color: rgba(139,115,85,0.25);
+      text-decoration-color: rgba(139,115,85,0.3);
     }
     .log-item .log-del {
       margin-left: auto;
@@ -800,6 +801,18 @@ function todayKey() {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
 }
+function fmtEditedAt(ts) {
+  const d = new Date(ts);
+  const time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const edited = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = Math.round((today - edited) / 86400000);
+  if (diff === 0) return time;
+  if (diff === 1) return `昨天 ${time}`;
+  if (diff === 2) return `前天 ${time}`;
+  return `${d.getMonth()+1}月${d.getDate()}日 ${time}`;
+}
 
 let searchQuery = '';
 let starOnly = false;
@@ -833,14 +846,15 @@ function renderJournal() {
     }
     const escaped = entry.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const editedLabel = entry.editedAt
-      ? `<span class="e-edited" id="edited-${i}" style="display:none">编辑于 ${fmtDate(entry.editedAt).time}</span>`
+      ? `<span class="e-edited" id="edited-${i}" style="display:none">编辑于 ${fmtEditedAt(entry.editedAt)}</span>`
       : '';
+    const isToday = dateKey === todayKey();
+    const headTime = isToday ? `${date} ${time}` : time;
     html += `
       <div class="entry ${entry.starred ? 'starred' : ''}" id="entry-${i}" style="animation: slideIn 0.4s ease-out ${Math.min(0.08*fi, 0.6)}s both">
         <div class="entry-head">
           <span class="e-mood">${entry.mood || '💭'}</span>
-          <span class="e-date">${date}</span>
-          <span class="e-time" data-i="${i}" title="点击查看编辑时间">${time}</span>
+          <span class="e-time" data-i="${i}" title="点击查看编辑时间">${headTime}</span>
           ${editedLabel}
         </div>
         <p id="text-${i}">${escaped}</p>
