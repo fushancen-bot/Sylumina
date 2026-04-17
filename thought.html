@@ -103,12 +103,15 @@
   .nav-count { font-size: 11px; color: var(--tx3); margin-left: auto; }
   .sidebar-bottom { margin-top: auto; padding: 12px 8px; }
   .btn-new {
-    width: 100%; padding: 8px 0; border-radius: 8px; border: none;
+    padding: 8px 16px; border-radius: 8px; border: none;
     background: var(--acc-soft); color: var(--acc);
     cursor: pointer; font-size: 13px; font-weight: 500;
     display: flex; align-items: center; justify-content: center; gap: 4px;
   }
   .btn-new:hover { filter: brightness(1.05); }
+  .topbar .btn-new { margin-left: auto; }
+  .sidebar-search { padding: 4px 8px 6px; }
+  .sidebar-search .search-box { flex: 0 0 auto; max-width: none; width: 100%; }
 
   /* ===== CONTENT ===== */
   .content {
@@ -130,12 +133,14 @@
   .page-title {
     padding: 4px 28px 14px;
     font-size: 24px; font-weight: 700; letter-spacing: -0.02em;
+    max-width: 800px; margin-left: auto; margin-right: auto; width: 100%;
   }
 
   /* ===== NOTES LIST ===== */
   .notes-list {
     flex: 1; overflow-y: auto; padding: 0 28px 28px;
     display: flex; flex-direction: column; gap: 5px;
+    max-width: 800px; margin-left: auto; margin-right: auto; width: 100%;
   }
   .note-card {
     padding: 13px 15px; border-radius: 11px; background: var(--card);
@@ -272,22 +277,22 @@
     <div class="sidebar-hint"><div class="sidebar-hint-bar"></div></div>
     <div class="sidebar-content">
       <div class="sidebar-header">文库</div>
-      <div class="nav-items" id="navItems"></div>
-      <div class="sidebar-bottom">
-        <button class="btn-new" onclick="createNote()">
-          <span style="font-size:16px;font-weight:300">+</span> 新建
-        </button>
+      <div class="sidebar-search">
+        <div class="search-box">
+          <span style="font-size:12px;opacity:0.45">⌕</span>
+          <input type="text" placeholder="搜索" id="searchInput" oninput="renderList()">
+        </div>
       </div>
+      <div class="nav-items" id="navItems"></div>
     </div>
   </div>
 
   <!-- Content -->
   <div class="content" id="content">
     <div class="topbar">
-      <div class="search-box">
-        <span style="font-size:12px;opacity:0.45">⌕</span>
-        <input type="text" placeholder="搜索" id="searchInput" oninput="renderList()">
-      </div>
+      <button class="btn-new" onclick="createNote()">
+        <span style="font-size:16px;font-weight:300">+</span> 新建
+      </button>
     </div>
     <div id="listView">
       <div class="page-title" id="pageTitle">全部笔记</div>
