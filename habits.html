@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>小山的打卡</title>
   <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="./icon.png">
+  <link rel="apple-touch-icon" href="./icon打卡.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="打卡">
@@ -282,6 +282,27 @@
     }
     .h-heatmap-cell.on { background: var(--sage-mid); }
 
+    /* ===== Habit actions ===== */
+    .h-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      justify-content: flex-end;
+    }
+    .h-action-btn {
+      font-family: var(--font);
+      font-size: 11px; font-weight: 500;
+      color: var(--text-faint);
+      background: none;
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 8px;
+      padding: 4px 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .h-action-btn:hover { color: var(--text-sub); border-color: rgba(0,0,0,0.15); }
+    .h-action-btn.h-del:hover { color: rgba(180,60,60,0.65); border-color: rgba(180,60,60,0.2); }
+
     /* ===== Add button ===== */
     .add-btn {
       display: block;
@@ -555,6 +576,17 @@ function calcStreak(data, habitIdx) {
   return { streak, best, total: total84, rate: Math.round(total84 / 84 * 100) };
 }
 
+// ===== Swap habits (updates both array and log indices) =====
+function swapHabits(data, a, b) {
+  [data.habits[a], data.habits[b]] = [data.habits[b], data.habits[a]];
+  Object.keys(data.log).forEach(dk => {
+    const dl = data.log[dk];
+    const av = dl[a], bv = dl[b];
+    if (av !== undefined) dl[b] = av; else delete dl[b];
+    if (bv !== undefined) dl[a] = bv; else delete dl[a];
+  });
+}
+
 // ===== Render habits =====
 function renderHabits(flashIdx, flashType) {
   const data = getHabits();
@@ -610,6 +642,11 @@ function renderHabits(flashIdx, flashType) {
             <div class="h-heatmap-title">最近 12 周</div>
             <div class="h-heatmap">${renderMiniHeatmap(heatDays)}</div>
           </div>
+          <div class="h-actions">
+            ${i > 0 ? `<button class="h-action-btn h-up" data-i="${i}">↑ 上移</button>` : ''}
+            ${i < data.habits.length - 1 ? `<button class="h-action-btn h-dn" data-i="${i}">↓ 下移</button>` : ''}
+            <button class="h-action-btn h-del" data-i="${i}">删除</button>
+          </div>
         </div>
       </div>`;
   });
@@ -639,6 +676,57 @@ function renderHabits(flashIdx, flashType) {
       if (e.target.closest('.h-checkbox')) return;
       const i = parseInt(row.dataset.i);
       expandedIdx = expandedIdx === i ? -1 : i;
+      renderHabits();
+    });
+  });
+
+  // Move up
+  document.querySelectorAll('.h-up').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const i = parseInt(btn.dataset.i);
+      const data = getHabits();
+      swapHabits(data, i, i - 1);
+      saveData(data);
+      expandedIdx = i - 1;
+      renderHabits();
+    });
+  });
+
+  // Move down
+  document.querySelectorAll('.h-dn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const i = parseInt(btn.dataset.i);
+      const data = getHabits();
+      swapHabits(data, i, i + 1);
+      saveData(data);
+      expandedIdx = i + 1;
+      renderHabits();
+    });
+  });
+
+  // Delete habit
+  document.querySelectorAll('.h-del').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const i = parseInt(btn.dataset.i);
+      const data = getHabits();
+      if (!confirm(`删除「${data.habits[i].name}」？打卡记录也会一起删除。`)) return;
+      // Shift log indices: habits after i move down by 1
+      Object.keys(data.log).forEach(dk => {
+        const dayLog = data.log[dk];
+        const newLog = {};
+        Object.keys(dayLog).forEach(k => {
+          const j = parseInt(k);
+          if (j < i) newLog[j] = dayLog[k];
+          else if (j > i) newLog[j - 1] = dayLog[k];
+        });
+        data.log[dk] = newLog;
+      });
+      data.habits.splice(i, 1);
+      expandedIdx = -1;
+      saveData(data);
       renderHabits();
     });
   });

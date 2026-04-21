@@ -352,6 +352,44 @@
     .entry.starred .star-btn { opacity: 1; color: rgba(168,132,88,0.75); }
     .entry.starred { border-left-color: rgba(168,132,88,0.45); }
 
+    /* ===== Month tabs ===== */
+    #month-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: 4px 0 14px;
+    }
+    #month-tabs::-webkit-scrollbar { display: none; }
+    #month-tabs:empty { display: none; }
+    .month-tab {
+      flex-shrink: 0;
+      width: 40px;
+      padding: 10px 0;
+      border-radius: 12px;
+      border: 1px solid rgba(139,115,85,0.1);
+      background: rgba(255,255,255,0.45);
+      font-family: var(--font-current);
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      text-align: center;
+      word-break: break-all;
+      line-height: 1.5;
+      transition: all 0.2s;
+    }
+    .month-tab:hover { background: rgba(255,255,255,0.75); }
+    .month-tab.selected {
+      background: rgba(139,115,85,0.1);
+      border-color: rgba(139,115,85,0.22);
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .j-sentinel {
+      height: 1px;
+      margin: 4px 0;
+    }
+
     /* ===== Daily Log ===== */
     .day-group { margin-bottom: 28px; }
     .day-header {
@@ -652,6 +690,7 @@
       </div>
     </div>
 
+    <div id="month-tabs"></div>
     <div id="entries"></div>
   </div>
 
@@ -816,9 +855,66 @@ function fmtEditedAt(ts) {
 
 let searchQuery = '';
 let starOnly = false;
+let selectedMonth = curMonthKey();
+let journalVisible = 30;
 
-function renderJournal() {
+const CN_MONTHS = ['一','二','三','四','五','六','七','八','九','十','十一','十二'];
+
+function entryMonthKey(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${d.getMonth()+1}`;
+}
+function curMonthKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}`;
+}
+function monthLabel(mk) {
+  const [y, m] = mk.split('-').map(Number);
+  const now = new Date();
+  if (y === now.getFullYear()) return CN_MONTHS[m-1] + '月';
+  return `${y}<br>${CN_MONTHS[m-1]}月`;
+}
+
+function entryHTML(entry, i, fi) {
+  const { date, time, dateKey } = fmtDate(entry.timestamp);
+  const escaped = entry.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const editedLabel = entry.editedAt
+    ? `<span class="e-edited" id="edited-${i}" style="display:none">编辑于 ${fmtEditedAt(entry.editedAt)}</span>`
+    : '';
+  const isToday = dateKey === todayKey();
+  const headTime = isToday ? `${date} ${time}` : time;
+  return `
+    <div class="entry ${entry.starred ? 'starred' : ''}" id="entry-${i}" style="animation: slideIn 0.4s ease-out ${Math.min(0.08*fi, 0.6)}s both">
+      <div class="entry-head">
+        <span class="e-mood">${entry.mood || '💭'}</span>
+        <span class="e-time" data-i="${i}" title="点击查看编辑时间">${headTime}</span>
+        ${editedLabel}
+      </div>
+      <p id="text-${i}">${escaped}</p>
+      <button class="star-btn" data-i="${i}">${entry.starred ? '★' : '☆'}</button>
+      <button class="edit-btn" data-i="${i}">编辑</button>
+      <button class="del" data-i="${i}">删除</button>
+    </div>`;
+}
+
+function entriesSlice(items, startFi) {
+  let html = '';
+  let lastDK = '';
+  items.forEach(({ entry, i }, idx) => {
+    const { date, dateKey } = fmtDate(entry.timestamp);
+    if (dateKey !== lastDK) {
+      html += `<div class="date-sep">${dateKey === todayKey() ? '今天' : date}</div>`;
+      lastDK = dateKey;
+    }
+    html += entryHTML(entry, i, startFi + idx);
+  });
+  return html;
+}
+
+function renderJournal(keepScroll) {
   const el = document.getElementById('entries');
+  const tabsEl = document.getElementById('month-tabs');
+  const scrollY = keepScroll ? window.scrollY : 0;
   const allEntries = getEntries();
   let filtered = allEntries.map((entry, i) => ({ entry, i }));
   if (starOnly) filtered = filtered.filter(({ entry }) => entry.starred);
@@ -827,44 +923,80 @@ function renderJournal() {
     filtered = filtered.filter(({ entry }) => entry.content.toLowerCase().includes(q));
   }
 
-  if (!filtered.length) {
-    const msg = searchQuery
-      ? `没有找到「${searchQuery}」`
-      : starOnly ? '还没有星标条目 ☆' : '还没有碎碎念…<br>写下第一条吧 ✨';
-    el.innerHTML = `<div class="empty">${msg}</div>`;
+  // Filter mode: hide tabs, show all results across all months
+  if (searchQuery || starOnly) {
+    tabsEl.innerHTML = '';
+    if (!filtered.length) {
+      el.innerHTML = `<div class="empty">${searchQuery ? `没有找到「${searchQuery}」` : '还没有星标条目 ☆'}</div>`;
+      return;
+    }
+    el.innerHTML = entriesSlice(filtered, 0);
+    if (keepScroll) window.scrollTo(0, scrollY);
+    bindJournalEvents(el);
     return;
   }
 
-  let html = '';
-  let lastDateKey = '';
-  filtered.forEach(({ entry, i }, fi) => {
-    const { date, time, dateKey } = fmtDate(entry.timestamp);
-    if (dateKey !== lastDateKey) {
-      const label = dateKey === todayKey() ? '今天' : date;
-      html += `<div class="date-sep">${label}</div>`;
-      lastDateKey = dateKey;
-    }
-    const escaped = entry.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const editedLabel = entry.editedAt
-      ? `<span class="e-edited" id="edited-${i}" style="display:none">编辑于 ${fmtEditedAt(entry.editedAt)}</span>`
-      : '';
-    const isToday = dateKey === todayKey();
-    const headTime = isToday ? `${date} ${time}` : time;
-    html += `
-      <div class="entry ${entry.starred ? 'starred' : ''}" id="entry-${i}" style="animation: slideIn 0.4s ease-out ${Math.min(0.08*fi, 0.6)}s both">
-        <div class="entry-head">
-          <span class="e-mood">${entry.mood || '💭'}</span>
-          <span class="e-time" data-i="${i}" title="点击查看编辑时间">${headTime}</span>
-          ${editedLabel}
-        </div>
-        <p id="text-${i}">${escaped}</p>
-        <button class="star-btn" data-i="${i}">${entry.starred ? '★' : '☆'}</button>
-        <button class="edit-btn" data-i="${i}">编辑</button>
-        <button class="del" data-i="${i}">删除</button>
-      </div>`;
-  });
-  el.innerHTML = html;
+  // Normal mode: month selector + entries for selected month
+  if (!filtered.length) {
+    tabsEl.innerHTML = '';
+    el.innerHTML = `<div class="empty">还没有碎碎念…<br>写下第一条吧 ✨</div>`;
+    return;
+  }
 
+  // Build sorted month list (oldest → newest for left-to-right display)
+  const monthSet = new Set(allEntries.map(e => entryMonthKey(e.timestamp)));
+  monthSet.add(curMonthKey());
+  const months = Array.from(monthSet).sort();
+
+  // Keep selectedMonth valid
+  if (!months.includes(selectedMonth)) selectedMonth = curMonthKey();
+
+  // Render month tabs
+  tabsEl.innerHTML = months.map(mk =>
+    `<button class="month-tab${mk === selectedMonth ? ' selected' : ''}" data-mk="${mk}">${monthLabel(mk)}</button>`
+  ).join('');
+  setTimeout(() => {
+    const sel = tabsEl.querySelector('.month-tab.selected');
+    if (sel) sel.scrollIntoView({ inline: 'nearest', behavior: 'smooth', block: 'nearest' });
+  }, 60);
+  tabsEl.querySelectorAll('.month-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      selectedMonth = tab.dataset.mk;
+      journalVisible = 30;
+      window.scrollTo(0, 0);
+      renderJournal();
+    });
+  });
+
+  // Filter entries to selected month and render
+  const monthEntries = filtered.filter(({ entry }) => entryMonthKey(entry.timestamp) === selectedMonth);
+  if (!monthEntries.length) {
+    el.innerHTML = `<div class="empty">这个月还没有碎碎念 ✨</div>`;
+    return;
+  }
+
+  let html = entriesSlice(monthEntries.slice(0, journalVisible), 0);
+  if (monthEntries.length > journalVisible) {
+    html += `<div class="j-sentinel" id="j-cur-sentinel"></div>`;
+  }
+  el.innerHTML = html;
+  if (keepScroll) window.scrollTo(0, scrollY);
+
+  bindJournalEvents(el);
+
+  const sentinel = document.getElementById('j-cur-sentinel');
+  if (sentinel) {
+    new IntersectionObserver((entries, obs) => {
+      if (entries[0].isIntersecting) {
+        obs.disconnect();
+        journalVisible += 30;
+        renderJournal(true);
+      }
+    }, { rootMargin: '120px' }).observe(sentinel);
+  }
+}
+
+function bindJournalEvents(el) {
   // Star
   el.querySelectorAll('.star-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -872,7 +1004,7 @@ function renderJournal() {
       const i = parseInt(btn.dataset.i);
       entries[i].starred = !entries[i].starred;
       saveEntries(entries);
-      renderJournal();
+      renderJournal(true);
     });
   });
   // Delete
@@ -882,7 +1014,7 @@ function renderJournal() {
       const entries = getEntries();
       entries.splice(parseInt(btn.dataset.i), 1);
       saveEntries(entries);
-      renderJournal();
+      renderJournal(true);
     });
   });
   // Edit
@@ -905,14 +1037,14 @@ function renderJournal() {
       textEl.replaceWith(textarea);
       textarea.after(actions);
       textarea.focus();
-      actions.querySelector('.edit-cancel').addEventListener('click', () => renderJournal());
+      actions.querySelector('.edit-cancel').addEventListener('click', () => renderJournal(true));
       actions.querySelector('.edit-save').addEventListener('click', () => {
         const newContent = textarea.value.trim();
         if (!newContent) return;
         entries[i].content = newContent;
         entries[i].editedAt = Date.now();
         saveEntries(entries);
-        renderJournal();
+        renderJournal(true);
       });
     });
   });
@@ -954,6 +1086,8 @@ saveBtnEl.addEventListener('click', () => {
   selectedMood = null;
   moodBtns.forEach(b => b.classList.remove('sel'));
   saveBtnEl.classList.remove('ready');
+  selectedMonth = curMonthKey();
+  journalVisible = 30;
   renderJournal();
 });
 textEl.addEventListener('keydown', (e) => {
