@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>小山的打卡</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="打卡">
+  <meta name="theme-color" content="#f3f2ee">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f3f2ee;
+      --card: rgba(255,255,255,0.72);
+      --text: #2c2c2c;
+      --text-sub: rgba(44,44,44,0.55);
+      --text-faint: rgba(44,44,44,0.25);
+      --border: rgba(0,0,0,0.04);
+      --sage: #7a8c73;
+      --sage-bg: rgba(122,140,115,0.08);
+      --sage-light: rgba(122,140,115,0.15);
+      --sage-mid: rgba(122,140,115,0.35);
+      --sage-full: rgba(100,125,90,0.65);
+      --font: -apple-system, 'Helvetica Neue', 'PingFang SC', sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: var(--font);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes checkPop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.35); }
+      100% { transform: scale(1); }
+    }
+    @keyframes firePop {
+      0% { transform: scale(1); }
+      35% { transform: scale(1.5); }
+      100% { transform: scale(1); }
+    }
+    @keyframes cardFlash {
+      0% { background: var(--card); }
+      30% { background: rgba(122,140,115,0.1); }
+      100% { background: var(--card); }
+    }
+    @keyframes cardFlashUndo {
+      0% { background: var(--card); }
+      30% { background: rgba(200,180,150,0.08); }
+      100% { background: var(--card); }
+    }
+    @keyframes slideDown {
+      from { opacity: 0; max-height: 0; }
+      to { opacity: 1; max-height: 300px; }
+    }
+    @keyframes slideUp {
+      from { opacity: 1; max-height: 300px; }
+      to { opacity: 0; max-height: 0; }
+    }
+
+    /* ===== Date bar ===== */
+    .date-header {
+      padding: 52px 20px 12px;
+      text-align: center;
+      animation: fadeUp 0.5s ease-out both;
+    }
+    .date-header h1 {
+      font-size: 17px; font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.01em;
+    }
+    .date-scroll {
+      display: flex;
+      gap: 4px;
+      padding: 8px 20px 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      animation: fadeUp 0.5s ease-out 0.05s both;
+    }
+    .date-scroll::-webkit-scrollbar { display: none; }
+    .date-item {
+      flex-shrink: 0;
+      width: 46px; height: 64px;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: transparent;
+      border: none;
+    }
+    .date-item.selected {
+      background: var(--sage);
+    }
+    .date-item .d-wd {
+      font-size: 11px; font-weight: 500;
+      color: var(--text-faint);
+      text-transform: uppercase;
+    }
+    .date-item.selected .d-wd { color: rgba(255,255,255,0.7); }
+    .date-item .d-day {
+      font-size: 17px; font-weight: 600;
+      color: var(--text);
+    }
+    .date-item.selected .d-day { color: #fff; }
+
+    /* ===== Progress card ===== */
+    .progress-card {
+      padding: 20px 24px;
+      background: var(--card);
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      animation: fadeUp 0.5s ease-out 0.1s both;
+    }
+    .circle-wrap { position: relative; flex-shrink: 0; }
+    .circle-text {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column;
+    }
+    .circle-num { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; }
+    .circle-den { font-size: 10px; color: var(--text-faint); font-weight: 500; }
+    .progress-info .pi-label {
+      font-size: 10px; font-weight: 600;
+      color: var(--text-faint);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .progress-info .pi-msg {
+      font-size: 14px; font-weight: 500;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+    .progress-info .pi-streak {
+      font-size: 12px; color: var(--text-faint);
+      margin-top: 4px;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* ===== Section ===== */
+    .section-label {
+      font-size: 10px; font-weight: 600;
+      color: var(--text-faint);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      animation: fadeUp 0.5s ease-out 0.15s both;
+    }
+
+    /* ===== Habit card ===== */
+    .habit-card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      overflow: hidden;
+      transition: background 0.4s ease;
+    }
+    .habit-card.flash-done { animation: cardFlash 0.5s ease; }
+    .habit-card.flash-undo { animation: cardFlashUndo 0.4s ease; }
+    .habit-main {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      gap: 14px;
+      cursor: pointer;
+    }
+    .h-checkbox {
+      width: 24px; height: 24px;
+      border-radius: 8px;
+      border: 2px solid rgba(0,0,0,0.12);
+      background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .h-checkbox.checked {
+      border-color: var(--sage);
+      background: var(--sage);
+    }
+    .h-checkbox.pop { animation: checkPop 0.35s ease; }
+    .h-checkbox svg { opacity: 0; transition: opacity 0.15s; }
+    .h-checkbox.checked svg { opacity: 1; }
+    .h-emoji { font-size: 18px; }
+    .h-name {
+      flex: 1;
+      font-size: 15px; font-weight: 600;
+      color: var(--text);
+      transition: all 0.2s;
+    }
+    .h-name.done {
+      font-weight: 400;
+      color: var(--text-sub);
+      text-decoration: line-through;
+      text-decoration-color: rgba(0,0,0,0.12);
+    }
+    .h-streak {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 13px; font-weight: 600;
+      color: var(--text-sub);
+    }
+    .h-streak.hot { color: rgba(200,145,60,0.8); }
+    .h-streak .fire { font-size: 14px; }
+    .h-streak .fire.pop { animation: firePop 0.4s ease; }
+    .h-expand {
+      font-size: 10px; color: var(--text-faint);
+      transition: transform 0.2s;
+      margin-left: 4px;
+    }
+    .h-expand.open { transform: rotate(180deg); }
+
+    /* ===== Expanded area ===== */
+    .habit-detail {
+      display: none;
+      padding: 0 16px 16px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+    .habit-detail.open {
+      display: block;
+      animation: fadeUp 0.25s ease-out both;
+    }
+    .h-stats {
+      display: flex; gap: 16px;
+      margin-bottom: 14px;
+    }
+    .h-stat {
+      text-align: center; flex: 1;
+    }
+    .h-stat-val {
+      font-size: 14px; font-weight: 700;
+      color: var(--text); line-height: 1.2;
+    }
+    .h-stat-label {
+      font-size: 9px; color: var(--text-faint);
+      margin-top: 3px; font-weight: 500;
+    }
+    .h-heatmap-wrap {
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.015);
+      border-radius: 10px;
+    }
+    .h-heatmap-title {
+      font-size: 10px; font-weight: 500;
+      color: var(--text-faint);
+      margin-bottom: 8px;
+    }
+    .h-heatmap {
+      display: flex; gap: 2px;
+      overflow: hidden;
+    }
+    .h-heatmap-col {
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .h-heatmap-cell {
+      width: 8px; height: 8px;
+      border-radius: 2px;
+      background: rgba(0,0,0,0.04);
+    }
+    .h-heatmap-cell.on { background: var(--sage-mid); }
+
+    /* ===== Add button ===== */
+    .add-btn {
+      display: block;
+      margin: 16px auto 40px;
+      font-family: var(--font);
+      font-size: 13px; font-weight: 500;
+      color: var(--sage);
+      background: var(--sage-bg);
+      border: 1px dashed var(--sage-light);
+      border-radius: 12px;
+      padding: 10px 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .add-btn:hover { background: var(--sage-light); }
+
+    /* ===== Footer ===== */
+    footer {
+      text-align: center;
+      padding-bottom: 36px;
+    }
+    footer .line {
+      width: 20px; height: 1px;
+      background: rgba(0,0,0,0.08);
+      margin: 0 auto 12px;
+    }
+    footer p {
+      font-size: 10px; color: var(--text-faint);
+      letter-spacing: 0.06em;
+    }
+    .data-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .data-btn {
+      font-family: var(--font);
+      font-size: 10px; font-weight: 500;
+      color: var(--text-faint);
+      background: none;
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 8px;
+      padding: 4px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .data-btn:hover { border-color: rgba(0,0,0,0.15); color: var(--text-sub); }
+
+    /* ===== Toast ===== */
+    .toast {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: rgba(243,242,238,0.95);
+      backdrop-filter: blur(16px);
+      border-radius: 16px;
+      padding: 24px 36px;
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+      z-index: 200;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .toast .t-emoji { font-size: 36px; margin-bottom: 6px; }
+    .toast .t-text { font-size: 13px; color: var(--text-sub); }
+
+    .container { max-width: 600px; margin: 0 auto; padding: 0 20px; }
+
+    @media (max-width: 480px) {
+      .date-header { padding-top: 36px; }
+    }
+  </style>
+
+</head>
+<body>
+
+<div class="date-header">
+  <h1 id="topDate"></h1>
+</div>
+
+<div class="date-scroll" id="dateScroll"></div>
+
+<div class="container">
+  <div class="progress-card" id="progressCard">
+    <div class="circle-wrap" id="circleWrap"></div>
+    <div class="progress-info">
+      <div class="pi-label">TODAY'S PROGRESS</div>
+      <div class="pi-msg" id="progressMsg"></div>
+      <div class="pi-streak" id="progressStreak"></div>
+    </div>
+  </div>
+
+  <div class="section-label">HABITS</div>
+
+  <div id="habitList"></div>
+
+<button class="add-btn" id="addBtn">+ 添加习惯</button>
+
+  <div class="toast" id="toast">
+    <div class="t-emoji" id="toastEmoji">✓</div>
+    <div class="t-text" id="toastText">完成！</div>
+  </div>
+
+  <footer>
+    <div class="line"></div>
+    <p>点击习惯展开热力图 ▾</p>
+    <div class="data-actions">
+      <button class="data-btn" id="exportBtn">导出数据</button>
+      <button class="data-btn" id="importBtn">导入数据</button>
+      <input type="file" id="importFile" accept=".json" style="display:none">
+    </div>
+  </footer>
+</div>
+
+<script>
+// ===== Data =====
+const STORAGE_KEY = 'xshan_habits';
+
+function getHabits() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (d && d.habits) return d;
+  } catch {}
+  return {
+    habits: [
+      { name: "阅读", emoji: "📖" },
+      { name: "运动", emoji: "🏃‍♀️" },
+      { name: "早睡", emoji: "🌙" },
+      { name: "写作", emoji: "✏️" },
+      { name: "冥想", emoji: "🧘" },
+    ],
+    log: {}
+  };
+}
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+}
+function dateKey(date) {
+  return `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
+}
+
+let selectedDateKey = todayKey();
+let expandedIdx = -1;
+
+// ===== Date bar =====
+function renderDateBar() {
+  const now = new Date();
+  const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  document.getElementById('topDate').textContent = `${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+
+  const weekdays = ["日","一","二","三","四","五","六"];
+  let html = '';
+  for (let i = -3; i <= 10; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + i);
+    const dk = dateKey(d);
+    const sel = dk === selectedDateKey ? ' selected' : '';
+    html += `<button class="date-item${sel}" data-dk="${dk}">
+      <span class="d-wd">${weekdays[d.getDay()]}</span>
+      <span class="d-day">${d.getDate()}</span>
+    </button>`;
+  }
+  document.getElementById('dateScroll').innerHTML = html;
+
+  document.querySelectorAll('.date-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedDateKey = btn.dataset.dk;
+      renderDateBar();
+      renderHabits();
+    });
+  });
+
+  setTimeout(() => {
+    const sel = document.querySelector('.date-item.selected');
+    if (sel) sel.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
+  }, 100);
+}
+
+// ===== Circle SVG =====
+function renderCircle(done, total) {
+  const size = 80;
+  const r = 30;
+  const circ = 2 * Math.PI * r;
+  const progress = total > 0 ? done / total : 0;
+
+  document.getElementById('circleWrap').innerHTML = `
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="40" cy="40" r="${r}" fill="none" stroke="rgba(0,0,0,0.04)" stroke-width="5"/>
+      <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--sage)" stroke-width="5"
+        stroke-linecap="round"
+        stroke-dasharray="${progress * circ} ${circ}"
+        transform="rotate(-90 40 40)"
+        style="transition: stroke-dasharray 0.5s ease"/>
+    </svg>
+    <div class="circle-text">
+      <span class="circle-num">${done}</span>
+      <span class="circle-den">/${total}</span>
+    </div>`;
+}
+
+// ===== Heatmap data for one habit =====
+function getHabitHeatmap(data, habitIdx) {
+  const days = [];
+  const now = new Date();
+  for (let i = 83; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dk = dateKey(d);
+    const dayLog = data.log[dk];
+    days.push(dayLog && dayLog[habitIdx] ? true : false);
+  }
+  return days;
+}
+
+function renderMiniHeatmap(days) {
+  let html = '';
+  for (let w = 0; w < days.length; w += 7) {
+    html += '<div class="h-heatmap-col">';
+    for (let d = 0; d < 7 && w + d < days.length; d++) {
+      html += `<div class="h-heatmap-cell${days[w+d] ? ' on' : ''}"></div>`;
+    }
+    html += '</div>';
+  }
+  return html;
+}
+
+// ===== Streak calc =====
+function calcStreak(data, habitIdx) {
+  let streak = 0;
+  let best = 0;
+  let currentStreak = 0;
+  const now = new Date();
+
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dk = dateKey(d);
+    const dayLog = data.log[dk];
+    const done = dayLog && dayLog[habitIdx];
+
+    if (done) {
+      currentStreak++;
+      if (currentStreak > best) best = currentStreak;
+    } else {
+      if (i === 0) {
+        currentStreak = 0;
+        continue;
+      }
+      if (streak === 0) streak = currentStreak;
+      currentStreak = 0;
+    }
+  }
+  if (streak === 0) streak = currentStreak;
+
+  let total84 = 0;
+  for (let i = 0; i < 84; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dk = dateKey(d);
+    const dayLog = data.log[dk];
+    if (dayLog && dayLog[habitIdx]) total84++;
+  }
+
+  return { streak, best, total: total84, rate: Math.round(total84 / 84 * 100) };
+}
+
+// ===== Render habits =====
+function renderHabits(flashIdx, flashType) {
+  const data = getHabits();
+  const dayLog = data.log[selectedDateKey] || {};
+  const total = data.habits.length;
+  let doneCount = 0;
+  data.habits.forEach((_, i) => { if (dayLog[i]) doneCount++; });
+
+  renderCircle(doneCount, total);
+
+  const remaining = total - doneCount;
+  document.getElementById('progressMsg').textContent =
+    remaining === 0 ? '全部完成！太棒了 ✦' : `还有 ${remaining} 项没做`;
+
+  const maxStreak = Math.max(...data.habits.map((_, i) => calcStreak(data, i).streak), 0);
+  document.getElementById('progressStreak').innerHTML =
+    maxStreak > 0 ? `<span>🔥</span> 最长连续 ${maxStreak} 天` : '';
+
+  let html = '';
+  data.habits.forEach((habit, i) => {
+    const done = !!dayLog[i];
+    const stats = calcStreak(data, i);
+    const heatDays = getHabitHeatmap(data, i);
+    const isExpanded = expandedIdx === i;
+    const flashClass = flashIdx === i
+      ? (flashType === 'done' ? ' flash-done' : ' flash-undo')
+      : '';
+
+    html += `
+      <div class="habit-card${flashClass}" id="hcard-${i}" style="animation: fadeUp 0.4s ease-out ${0.18 + i*0.05}s both">
+        <div class="habit-main" data-i="${i}">
+          <div class="h-checkbox${done ? ' checked' : ''}" data-i="${i}" id="hcb-${i}">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="h-emoji">${habit.emoji}</span>
+          <span class="h-name${done ? ' done' : ''}">${habit.name}</span>
+          ${stats.streak > 0 ? `
+            <span class="h-streak${stats.streak >= 7 ? ' hot' : ''}">
+              <span class="fire" id="fire-${i}">🔥</span>${stats.streak}
+            </span>` : ''}
+          <span class="h-expand${isExpanded ? ' open' : ''}" data-i="${i}">▾</span>
+        </div>
+        <div class="habit-detail${isExpanded ? ' open' : ''}" id="hdetail-${i}">
+          <div class="h-stats">
+            <div class="h-stat"><div class="h-stat-val">${stats.streak}天</div><div class="h-stat-label">连续</div></div>
+            <div class="h-stat"><div class="h-stat-val">${stats.best}天</div><div class="h-stat-label">最佳</div></div>
+            <div class="h-stat"><div class="h-stat-val">${stats.total}次</div><div class="h-stat-label">总计</div></div>
+            <div class="h-stat"><div class="h-stat-val">${stats.rate}%</div><div class="h-stat-label">完成率</div></div>
+          </div>
+          <div class="h-heatmap-wrap">
+            <div class="h-heatmap-title">最近 12 周</div>
+            <div class="h-heatmap">${renderMiniHeatmap(heatDays)}</div>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  document.getElementById('habitList').innerHTML = html;
+
+  document.querySelectorAll('.h-checkbox').forEach(cb => {
+    cb.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const i = parseInt(cb.dataset.i);
+      const data = getHabits();
+      if (!data.log[selectedDateKey]) data.log[selectedDateKey] = {};
+      const wasDone = !!data.log[selectedDateKey][i];
+      data.log[selectedDateKey][i] = !wasDone;
+      saveData(data);
+
+      cb.classList.add('pop');
+      const fireEl = document.getElementById(`fire-${i}`);
+      if (fireEl && !wasDone) fireEl.classList.add('pop');
+
+      renderHabits(i, wasDone ? 'undo' : 'done');
+    });
+  });
+
+  document.querySelectorAll('.habit-main').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.h-checkbox')) return;
+      const i = parseInt(row.dataset.i);
+      expandedIdx = expandedIdx === i ? -1 : i;
+      renderHabits();
+    });
+  });
+}
+
+// ===== Add habit =====
+document.getElementById('addBtn').addEventListener('click', () => {
+  const name = prompt('习惯名称：');
+  if (!name || !name.trim()) return;
+  const emoji = prompt('选个 emoji（可留空）：') || '✨';
+  const data = getHabits();
+  data.habits.push({ name: name.trim(), emoji: emoji.trim() });
+  saveData(data);
+  renderHabits();
+});
+
+// ===== Export / Import =====
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const data = getHabits();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  a.href = url;
+  a.download = `打卡-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('importBtn').addEventListener('click', () => {
+  document.getElementById('importFile').click();
+});
+
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (!imported.habits) throw new Error();
+
+      const existing = getHabits();
+      Object.keys(imported.log || {}).forEach(dk => {
+        if (!existing.log[dk]) existing.log[dk] = {};
+        Object.assign(existing.log[dk], imported.log[dk]);
+      });
+      const existingNames = new Set(existing.habits.map(h => h.name));
+      (imported.habits || []).forEach(h => {
+        if (!existingNames.has(h.name)) existing.habits.push(h);
+      });
+
+      saveData(existing);
+      renderDateBar();
+      renderHabits();
+
+      const toast = document.getElementById('toast');
+      document.getElementById('toastEmoji').textContent = '📦';
+      document.getElementById('toastText').textContent = '导入成功';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1500);
+    } catch {
+      alert('文件格式不对，请选择之前导出的 JSON 文件');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+// ===== Service Worker =====
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js');
+}
+
+// ===== Init =====
+renderDateBar();
+renderHabits();
+</script>
+
+</body>
+</html>
