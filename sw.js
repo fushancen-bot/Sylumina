@@ -1,4 +1,4 @@
-const CACHE = 'sylumina-journal-v4';
+const CACHE = 'sylumina-journal-v5';
 
 const PRECACHE = [
   './journal.html',
@@ -6,6 +6,7 @@ const PRECACHE = [
   './%E6%B1%87%E6%96%87%E6%98%8E%E6%9C%9D%E4%BD%93.otf',
   './manifest.json',
   './icon.png',
+  './icon%E6%89%93%E5%8D%A1.png',
 ];
 
 // Install: cache static assets (not HTML — HTML is always fetched fresh)

@@ -352,6 +352,38 @@
     .entry.starred .star-btn { opacity: 1; color: rgba(168,132,88,0.75); }
     .entry.starred { border-left-color: rgba(168,132,88,0.45); }
 
+    /* ===== Past month headers ===== */
+    .past-month-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid rgba(139,115,85,0.07);
+      cursor: pointer;
+      font-family: var(--font-accent);
+      font-size: 13px;
+      color: var(--text-secondary);
+      transition: background 0.2s;
+    }
+    .past-month-header:hover { background: rgba(255,255,255,0.7); }
+    .past-month-header .m-count {
+      font-size: 11px;
+      color: var(--text-faint);
+    }
+    .past-month-header .m-arrow {
+      font-size: 10px;
+      color: var(--text-faint);
+      transition: transform 0.2s;
+    }
+    .past-month-header.open .m-arrow { transform: rotate(180deg); }
+    .j-sentinel {
+      height: 1px;
+      margin: 4px 0;
+    }
+
     /* ===== Daily Log ===== */
     .day-group { margin-bottom: 28px; }
     .day-header {
@@ -816,9 +848,64 @@ function fmtEditedAt(ts) {
 
 let searchQuery = '';
 let starOnly = false;
+let journalVisible = 30;
+let expandedPastMonth = null;
+let pastMonthVisible = 30;
 
-function renderJournal() {
+function entryMonthKey(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${d.getMonth()+1}`;
+}
+function curMonthKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}`;
+}
+function monthLabel(mk) {
+  const [y, m] = mk.split('-').map(Number);
+  const now = new Date();
+  if (y === now.getFullYear()) return `${m}月`;
+  return `${y}年${m}月`;
+}
+
+function entryHTML(entry, i, fi) {
+  const { date, time, dateKey } = fmtDate(entry.timestamp);
+  const escaped = entry.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const editedLabel = entry.editedAt
+    ? `<span class="e-edited" id="edited-${i}" style="display:none">编辑于 ${fmtEditedAt(entry.editedAt)}</span>`
+    : '';
+  const isToday = dateKey === todayKey();
+  const headTime = isToday ? `${date} ${time}` : time;
+  return `
+    <div class="entry ${entry.starred ? 'starred' : ''}" id="entry-${i}" style="animation: slideIn 0.4s ease-out ${Math.min(0.08*fi, 0.6)}s both">
+      <div class="entry-head">
+        <span class="e-mood">${entry.mood || '💭'}</span>
+        <span class="e-time" data-i="${i}" title="点击查看编辑时间">${headTime}</span>
+        ${editedLabel}
+      </div>
+      <p id="text-${i}">${escaped}</p>
+      <button class="star-btn" data-i="${i}">${entry.starred ? '★' : '☆'}</button>
+      <button class="edit-btn" data-i="${i}">编辑</button>
+      <button class="del" data-i="${i}">删除</button>
+    </div>`;
+}
+
+function entriesSlice(items, startFi) {
+  let html = '';
+  let lastDK = '';
+  items.forEach(({ entry, i }, idx) => {
+    const { date, dateKey } = fmtDate(entry.timestamp);
+    if (dateKey !== lastDK) {
+      html += `<div class="date-sep">${dateKey === todayKey() ? '今天' : date}</div>`;
+      lastDK = dateKey;
+    }
+    html += entryHTML(entry, i, startFi + idx);
+  });
+  return html;
+}
+
+function renderJournal(keepScroll) {
   const el = document.getElementById('entries');
+  const scrollY = keepScroll ? window.scrollY : 0;
   const allEntries = getEntries();
   let filtered = allEntries.map((entry, i) => ({ entry, i }));
   if (starOnly) filtered = filtered.filter(({ entry }) => entry.starred);
@@ -836,35 +923,85 @@ function renderJournal() {
   }
 
   let html = '';
-  let lastDateKey = '';
-  filtered.forEach(({ entry, i }, fi) => {
-    const { date, time, dateKey } = fmtDate(entry.timestamp);
-    if (dateKey !== lastDateKey) {
-      const label = dateKey === todayKey() ? '今天' : date;
-      html += `<div class="date-sep">${label}</div>`;
-      lastDateKey = dateKey;
-    }
-    const escaped = entry.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const editedLabel = entry.editedAt
-      ? `<span class="e-edited" id="edited-${i}" style="display:none">编辑于 ${fmtEditedAt(entry.editedAt)}</span>`
-      : '';
-    const isToday = dateKey === todayKey();
-    const headTime = isToday ? `${date} ${time}` : time;
-    html += `
-      <div class="entry ${entry.starred ? 'starred' : ''}" id="entry-${i}" style="animation: slideIn 0.4s ease-out ${Math.min(0.08*fi, 0.6)}s both">
-        <div class="entry-head">
-          <span class="e-mood">${entry.mood || '💭'}</span>
-          <span class="e-time" data-i="${i}" title="点击查看编辑时间">${headTime}</span>
-          ${editedLabel}
-        </div>
-        <p id="text-${i}">${escaped}</p>
-        <button class="star-btn" data-i="${i}">${entry.starred ? '★' : '☆'}</button>
-        <button class="edit-btn" data-i="${i}">编辑</button>
-        <button class="del" data-i="${i}">删除</button>
-      </div>`;
-  });
-  el.innerHTML = html;
 
+  if (searchQuery || starOnly) {
+    // Filtered mode: show all results
+    html = entriesSlice(filtered, 0);
+  } else {
+    // Normal mode: current month paginated + past months collapsed
+    const cmk = curMonthKey();
+    const current = filtered.filter(({ entry }) => entryMonthKey(entry.timestamp) === cmk);
+    const past    = filtered.filter(({ entry }) => entryMonthKey(entry.timestamp) !== cmk);
+
+    html = entriesSlice(current.slice(0, journalVisible), 0);
+    if (current.length > journalVisible) {
+      html += `<div class="j-sentinel" id="j-cur-sentinel"></div>`;
+    }
+
+    // Group past entries by month
+    const pastMonths = {};
+    past.forEach(item => {
+      const mk = entryMonthKey(item.entry.timestamp);
+      if (!pastMonths[mk]) pastMonths[mk] = [];
+      pastMonths[mk].push(item);
+    });
+    Object.keys(pastMonths).sort().reverse().forEach(mk => {
+      const items = pastMonths[mk];
+      const isOpen = expandedPastMonth === mk;
+      html += `<div class="past-month-header${isOpen ? ' open' : ''}" data-mk="${mk}">
+        <span>${monthLabel(mk)}</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span class="m-count">${items.length} 条</span>
+          <span class="m-arrow">▾</span>
+        </span>
+      </div>`;
+      if (isOpen) {
+        html += entriesSlice(items.slice(0, pastMonthVisible), current.length);
+        if (items.length > pastMonthVisible) {
+          html += `<div class="j-sentinel" id="j-past-sentinel"></div>`;
+        }
+      }
+    });
+  }
+
+  el.innerHTML = html;
+  if (keepScroll) window.scrollTo(0, scrollY);
+
+  bindJournalEvents(el);
+
+  // Infinite scroll observers
+  const curSentinel = document.getElementById('j-cur-sentinel');
+  if (curSentinel) {
+    new IntersectionObserver((entries, obs) => {
+      if (entries[0].isIntersecting) {
+        obs.disconnect();
+        journalVisible += 30;
+        renderJournal(true);
+      }
+    }, { rootMargin: '120px' }).observe(curSentinel);
+  }
+  const pastSentinel = document.getElementById('j-past-sentinel');
+  if (pastSentinel) {
+    new IntersectionObserver((entries, obs) => {
+      if (entries[0].isIntersecting) {
+        obs.disconnect();
+        pastMonthVisible += 30;
+        renderJournal(true);
+      }
+    }, { rootMargin: '120px' }).observe(pastSentinel);
+  }
+
+  // Past month header clicks
+  el.querySelectorAll('.past-month-header').forEach(hdr => {
+    hdr.addEventListener('click', () => {
+      expandedPastMonth = expandedPastMonth === hdr.dataset.mk ? null : hdr.dataset.mk;
+      pastMonthVisible = 30;
+      renderJournal(true);
+    });
+  });
+}
+
+function bindJournalEvents(el) {
   // Star
   el.querySelectorAll('.star-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -872,7 +1009,7 @@ function renderJournal() {
       const i = parseInt(btn.dataset.i);
       entries[i].starred = !entries[i].starred;
       saveEntries(entries);
-      renderJournal();
+      renderJournal(true);
     });
   });
   // Delete
@@ -882,7 +1019,7 @@ function renderJournal() {
       const entries = getEntries();
       entries.splice(parseInt(btn.dataset.i), 1);
       saveEntries(entries);
-      renderJournal();
+      renderJournal(true);
     });
   });
   // Edit
@@ -905,14 +1042,14 @@ function renderJournal() {
       textEl.replaceWith(textarea);
       textarea.after(actions);
       textarea.focus();
-      actions.querySelector('.edit-cancel').addEventListener('click', () => renderJournal());
+      actions.querySelector('.edit-cancel').addEventListener('click', () => renderJournal(true));
       actions.querySelector('.edit-save').addEventListener('click', () => {
         const newContent = textarea.value.trim();
         if (!newContent) return;
         entries[i].content = newContent;
         entries[i].editedAt = Date.now();
         saveEntries(entries);
-        renderJournal();
+        renderJournal(true);
       });
     });
   });
