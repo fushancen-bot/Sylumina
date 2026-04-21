@@ -980,46 +980,72 @@ function renderJournal(keepScroll) {
     html += `<div class="j-sentinel" id="j-cur-sentinel"></div>`;
   }
   el.innerHTML = html;
-  if (keepScroll) window.scrollTo(0, scrollY);
+  bindJournalEvents(el);
+  observeJournalSentinel();
+}
+
+function appendJournalEntries() {
+  const allEntries = getEntries();
+  const monthEntries = allEntries
+    .map((entry, i) => ({ entry, i }))
+    .filter(({ entry }) => entryMonthKey(entry.timestamp) === selectedMonth);
+
+  const el = document.getElementById('entries');
+  const old = document.getElementById('j-cur-sentinel');
+  if (old) old.remove();
+
+  const startIdx = journalVisible - 30;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = entriesSlice(monthEntries.slice(startIdx, journalVisible), 0);
+  while (tmp.firstChild) el.appendChild(tmp.firstChild);
 
   bindJournalEvents(el);
 
-  const sentinel = document.getElementById('j-cur-sentinel');
-  if (sentinel) {
-    new IntersectionObserver((entries, obs) => {
-      if (entries[0].isIntersecting) {
-        obs.disconnect();
-        journalVisible += 30;
-        renderJournal(true);
-      }
-    }, { rootMargin: '120px' }).observe(sentinel);
+  if (monthEntries.length > journalVisible) {
+    const s = document.createElement('div');
+    s.className = 'j-sentinel';
+    s.id = 'j-cur-sentinel';
+    el.appendChild(s);
+    observeJournalSentinel();
   }
+}
+
+function observeJournalSentinel() {
+  const sentinel = document.getElementById('j-cur-sentinel');
+  if (!sentinel) return;
+  new IntersectionObserver((entries, obs) => {
+    if (entries[0].isIntersecting) {
+      obs.disconnect();
+      journalVisible += 30;
+      appendJournalEntries();
+    }
+  }, { rootMargin: '120px' }).observe(sentinel);
 }
 
 function bindJournalEvents(el) {
   // Star
   el.querySelectorAll('.star-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.onclick = () => {
       const entries = getEntries();
       const i = parseInt(btn.dataset.i);
       entries[i].starred = !entries[i].starred;
       saveEntries(entries);
       renderJournal(true);
-    });
+    };
   });
   // Delete
   el.querySelectorAll('.del').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.onclick = () => {
       if (!confirm('删掉这条碎碎念？')) return;
       const entries = getEntries();
       entries.splice(parseInt(btn.dataset.i), 1);
       saveEntries(entries);
       renderJournal(true);
-    });
+    };
   });
   // Edit
   el.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.onclick = () => {
       const i = parseInt(btn.dataset.i);
       const entryEl = document.getElementById(`entry-${i}`);
       const textEl = document.getElementById(`text-${i}`);
@@ -1046,16 +1072,16 @@ function bindJournalEvents(el) {
         saveEntries(entries);
         renderJournal(true);
       });
-    });
+    };
   });
   // Edited time toggle
   el.querySelectorAll('.e-time').forEach(span => {
-    span.addEventListener('click', () => {
+    span.onclick = () => {
       const i = parseInt(span.dataset.i);
       const editedEl = document.getElementById(`edited-${i}`);
       if (!editedEl) return;
       editedEl.style.display = editedEl.style.display !== 'none' ? 'none' : 'inline';
-    });
+    };
   });
 }
 

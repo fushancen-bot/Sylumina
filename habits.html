@@ -643,6 +643,7 @@ function renderHabits(flashIdx, flashType) {
             <div class="h-heatmap">${renderMiniHeatmap(heatDays)}</div>
           </div>
           <div class="h-actions">
+            <button class="h-action-btn h-rename" data-i="${i}">重命名</button>
             ${i > 0 ? `<button class="h-action-btn h-up" data-i="${i}">↑ 上移</button>` : ''}
             ${i < data.habits.length - 1 ? `<button class="h-action-btn h-dn" data-i="${i}">↓ 下移</button>` : ''}
             <button class="h-action-btn h-del" data-i="${i}">删除</button>
@@ -676,6 +677,24 @@ function renderHabits(flashIdx, flashType) {
       if (e.target.closest('.h-checkbox')) return;
       const i = parseInt(row.dataset.i);
       expandedIdx = expandedIdx === i ? -1 : i;
+      renderHabits();
+    });
+  });
+
+  // Rename
+  document.querySelectorAll('.h-rename').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const i = parseInt(btn.dataset.i);
+      const data = getHabits();
+      const habit = data.habits[i];
+      const newName = prompt('习惯名称：', habit.name);
+      if (!newName || !newName.trim()) return;
+      const newEmoji = prompt('emoji：', habit.emoji);
+      if (newEmoji === null) return;
+      habit.name = newName.trim();
+      habit.emoji = newEmoji.trim() || habit.emoji;
+      saveData(data);
       renderHabits();
     });
   });
