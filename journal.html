@@ -417,26 +417,15 @@
       flex: 1; height: 1px;
       background: linear-gradient(to right, rgba(139,115,85,0.12), transparent);
     }
-    .day-header .progress-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .day-header .progress-bar {
-      width: 48px; height: 3px;
-      border-radius: 2px;
-      background: rgba(139,115,85,0.08);
-      overflow: hidden;
-    }
-    .day-header .progress-fill {
-      height: 100%; border-radius: 2px;
-      background: var(--check-color);
-      transition: width 0.35s ease;
-    }
-    .day-header .progress-text {
-      font-family: var(--font-accent);
+    .day-done-tag {
+      color: var(--check-color);
       font-size: 12px;
-      color: var(--text-faint);
+      letter-spacing: 0.03em;
+    }
+    .day-active-mark {
+      color: rgba(139,115,85,0.35);
+      font-size: 10px;
+      margin-left: 2px;
     }
     .log-item {
       display: flex;
@@ -1270,10 +1259,9 @@ function todayDateStr() {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function fmtDailyDate(dateStr) {
-  if (dateStr === todayDateStr()) return '今天';
   const d = new Date(dateStr + 'T00:00:00');
   const wd = ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
-  return `${d.getMonth()+1}月${d.getDate()}日 · ${wd}`;
+  return `${d.getMonth()+1}月${d.getDate()}日·${wd}`;
 }
 
 function renderDaily() {
@@ -1289,16 +1277,23 @@ function renderDaily() {
   logs.forEach((day, dayIdx) => {
     const doneCount = day.items.filter(it => it.done).length;
     const total = day.items.length;
-    const pct = total > 0 ? (doneCount / total * 100) : 0;
+    const isToday = day.date === todayDateStr();
+    const allDone = total > 0 && doneCount === total;
+    let dayLabel;
+    if (isToday) {
+      dayLabel = allDone
+        ? `今天的成就<span class="day-done-tag">全部完成✨</span>`
+        : `今天的成就<span class="day-active-mark">✦</span>`;
+    } else {
+      dayLabel = allDone
+        ? `${fmtDailyDate(day.date)}<span class="day-done-tag">· 全部完成 ✨</span>`
+        : fmtDailyDate(day.date);
+    }
 
     html += `<div class="day-group" style="animation: fadeUp 0.4s ease-out ${dayIdx * 0.08}s both">
       <div class="day-header">
-        <span class="day-label">${fmtDailyDate(day.date)}</span>
+        <span class="day-label">${dayLabel}</span>
         <div class="day-line"></div>
-        <div class="progress-wrap">
-          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-          <span class="progress-text">${doneCount}/${total}</span>
-        </div>
       </div>`;
 
     day.items.forEach((item, itemIdx) => {
