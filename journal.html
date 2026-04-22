@@ -382,8 +382,9 @@
       color: var(--text-secondary);
       cursor: pointer;
       text-align: center;
-      word-break: break-all;
-      line-height: 1.5;
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      line-height: 40px;
       transition: all 0.2s;
     }
     .month-tab:hover { background: rgba(255,255,255,0.75); }
@@ -962,7 +963,7 @@ function monthLabel(mk) {
   const [y, m] = mk.split('-').map(Number);
   const now = new Date();
   if (y === now.getFullYear()) return CN_MONTHS[m-1] + '月';
-  return `${y}<br>${CN_MONTHS[m-1]}月`;
+  return `${y.toString().slice(2)}${CN_MONTHS[m-1]}月`;
 }
 
 function entryHTML(entry, i, fi, animate) {
