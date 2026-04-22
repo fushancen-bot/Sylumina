@@ -876,7 +876,7 @@ function monthLabel(mk) {
   return `${y}<br>${CN_MONTHS[m-1]}月`;
 }
 
-function entryHTML(entry, i, fi) {
+function entryHTML(entry, i, fi, animate) {
   const { date, time, dateKey } = fmtDate(entry.timestamp);
   const escaped = entry.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const editedLabel = entry.editedAt
@@ -884,8 +884,9 @@ function entryHTML(entry, i, fi) {
     : '';
   const isToday = dateKey === todayKey();
   const headTime = isToday ? `${date} ${time}` : time;
+  const anim = animate ? `style="animation: slideIn 0.4s ease-out ${Math.min(0.08*fi, 0.6)}s both"` : '';
   return `
-    <div class="entry ${entry.starred ? 'starred' : ''}" id="entry-${i}" style="animation: slideIn 0.4s ease-out ${Math.min(0.08*fi, 0.6)}s both">
+    <div class="entry ${entry.starred ? 'starred' : ''}" id="entry-${i}" ${anim}>
       <div class="entry-head">
         <span class="e-mood">${entry.mood || '💭'}</span>
         <span class="e-time" data-i="${i}" title="点击查看编辑时间">${headTime}</span>
@@ -898,7 +899,7 @@ function entryHTML(entry, i, fi) {
     </div>`;
 }
 
-function entriesSlice(items, startFi) {
+function entriesSlice(items, startFi, animate = true) {
   let html = '';
   let lastDK = '';
   items.forEach(({ entry, i }, idx) => {
@@ -907,7 +908,7 @@ function entriesSlice(items, startFi) {
       html += `<div class="date-sep">${dateKey === todayKey() ? '今天' : date}</div>`;
       lastDK = dateKey;
     }
-    html += entryHTML(entry, i, startFi + idx);
+    html += entryHTML(entry, i, startFi + idx, animate);
   });
   return html;
 }
@@ -931,7 +932,7 @@ function renderJournal(keepScroll) {
       el.innerHTML = `<div class="empty">${searchQuery ? `没有找到「${searchQuery}」` : '还没有星标条目 ☆'}</div>`;
       return;
     }
-    el.innerHTML = entriesSlice(filtered, 0);
+    el.innerHTML = entriesSlice(filtered, 0, !keepScroll);
     if (keepScroll) window.scrollTo(0, scrollY);
     bindJournalEvents(el);
     return;
@@ -976,7 +977,8 @@ function renderJournal(keepScroll) {
     return;
   }
 
-  let html = entriesSlice(monthEntries.slice(0, journalVisible), 0);
+  const animate = !keepScroll;
+  let html = entriesSlice(monthEntries.slice(0, journalVisible), 0, animate);
   if (monthEntries.length > journalVisible) {
     html += `<div class="j-sentinel" id="j-cur-sentinel"></div>`;
   }
@@ -997,7 +999,7 @@ function appendJournalEntries() {
 
   const startIdx = journalVisible - 30;
   const tmp = document.createElement('div');
-  tmp.innerHTML = entriesSlice(monthEntries.slice(startIdx, journalVisible), 0);
+  tmp.innerHTML = entriesSlice(monthEntries.slice(startIdx, journalVisible), 0, false);
   while (tmp.firstChild) el.appendChild(tmp.firstChild);
 
   bindJournalEvents(el);
