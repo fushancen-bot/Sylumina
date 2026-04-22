@@ -116,6 +116,7 @@
       text-transform: uppercase;
     }
     .date-item.selected .d-wd { color: rgba(255,255,255,0.7); }
+    .d-month-mark { color: var(--sage) !important; font-weight: 600; }
     .date-item .d-day {
       font-size: 17px; font-weight: 600;
       color: var(--text);
@@ -463,13 +464,19 @@ function renderDateBar() {
 
   const weekdays = ["日","一","二","三","四","五","六"];
   let html = '';
+  let lastMonth = now.getMonth();
   for (let i = -3; i <= 10; i++) {
     const d = new Date(now);
     d.setDate(d.getDate() + i);
     const dk = dateKey(d);
     const sel = dk === selectedDateKey ? ' selected' : '';
+    const isNewMonth = d.getMonth() !== lastMonth;
+    if (isNewMonth) lastMonth = d.getMonth();
+    const topLabel = isNewMonth
+      ? `<span class="d-wd d-month-mark">${d.getMonth()+1}月</span>`
+      : `<span class="d-wd">${weekdays[d.getDay()]}</span>`;
     html += `<button class="date-item${sel}" data-dk="${dk}">
-      <span class="d-wd">${weekdays[d.getDay()]}</span>
+      ${topLabel}
       <span class="d-day">${d.getDate()}</span>
     </button>`;
   }
@@ -589,7 +596,7 @@ function swapHabits(data, a, b) {
 }
 
 // ===== Render habits =====
-function renderHabits(flashIdx, flashType) {
+function renderHabits(flashIdx, flashType, animate = true) {
   const data = getHabits();
   const dayLog = data.log[selectedDateKey] || {};
   const total = data.habits.length;
@@ -617,7 +624,7 @@ function renderHabits(flashIdx, flashType) {
       : '';
 
     html += `
-      <div class="habit-card${flashClass}" id="hcard-${i}" style="animation: fadeUp 0.4s ease-out ${0.18 + i*0.05}s both">
+      <div class="habit-card${flashClass}" id="hcard-${i}" ${animate ? `style="animation: fadeUp 0.4s ease-out ${0.18 + i*0.05}s both"` : ''}>
         <div class="habit-main" data-i="${i}">
           <div class="h-checkbox${done ? ' checked' : ''}" data-i="${i}" id="hcb-${i}">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -669,7 +676,7 @@ function renderHabits(flashIdx, flashType) {
       const fireEl = document.getElementById(`fire-${i}`);
       if (fireEl && !wasDone) fireEl.classList.add('pop');
 
-      renderHabits(i, wasDone ? 'undo' : 'done');
+      renderHabits(i, wasDone ? 'undo' : 'done', false);
     });
   });
 
@@ -678,7 +685,7 @@ function renderHabits(flashIdx, flashType) {
       if (e.target.closest('.h-checkbox')) return;
       const i = parseInt(row.dataset.i);
       expandedIdx = expandedIdx === i ? -1 : i;
-      renderHabits();
+      renderHabits(undefined, undefined, false);
     });
   });
 
