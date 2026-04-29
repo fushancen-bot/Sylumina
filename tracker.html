@@ -554,12 +554,8 @@ function formatTime(ts) {
 let expandedId = null;
 let editingId = null;
 
-// Build a GitHub-style 10-week dot grid
 function buildDotGrid(entries) {
   const WEEKS = 10;
-  const DAYS = WEEKS * 7; // 70 days
-
-  // Count events per day (keyed by YYYY-MM-DD)
   const counts = {};
   entries.forEach(e => {
     const d = new Date(e.time);
@@ -567,14 +563,11 @@ function buildDotGrid(entries) {
     counts[key] = (counts[key] || 0) + 1;
   });
 
-  // Build array: index 0 = oldest day, index 69 = today
-  // The grid starts on the Monday that is >= DAYS ago
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  // Snap back to Monday of current week
-  const todayDow = (today.getDay() + 6) % 7; // 0=Mon..6=Sun
+  const todayDow = (today.getDay() + 6) % 7;
   const gridEnd = new Date(today);
-  gridEnd.setDate(today.getDate() + (6 - todayDow)); // end on next Sunday (or today if Sun)
+  gridEnd.setDate(today.getDate() + (6 - todayDow));
   const gridStart = new Date(gridEnd);
   gridStart.setDate(gridEnd.getDate() - (WEEKS * 7 - 1));
 
@@ -597,7 +590,6 @@ function buildDotGrid(entries) {
     cells.push(`<div class="dot-cell ${lvl}" title="${isFuture ? '' : formatDate(d) + (count ? '：' + count + '次' : '')}"></div>`);
   }
 
-  // Month labels: find first day of each month within grid
   const labelParts = [];
   let lastMonth = -1;
   for (let i = 0; i < WEEKS * 7; i++) {
@@ -610,12 +602,9 @@ function buildDotGrid(entries) {
     }
   }
 
-  // Build label row with positioned spans
   const labelSpans = Array(WEEKS).fill('');
   labelParts.forEach(p => { if (p.col < WEEKS) labelSpans[p.col] = p.label; });
-  const labelRow = labelSpans.map(l =>
-    `<span class="dot-grid-label">${l}</span>`
-  ).join('');
+  const labelRow = labelSpans.map(l => `<span class="dot-grid-label">${l}</span>`).join('');
 
   return `<div class="dot-grid-wrap">
     <div class="dot-grid-labels">${labelRow}</div>
@@ -656,7 +645,7 @@ function render(flashId) {
         </div>`
       : `<div class="item-since never">还没有记录过</div>`;
 
-    const historyRows = entries.slice(0, 20).map((e, ei) => `
+    const historyRows = entries.slice(0, 20).map(e => `
       <div class="history-entry">
         <span class="history-time">${formatTime(e.time)}</span>
         <span class="history-ago">${timeSince(e.time).text}</span>
@@ -692,7 +681,6 @@ function render(flashId) {
     </div>`;
   }).join('');
 
-  // Log button
   document.querySelectorAll('.log-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -708,7 +696,6 @@ function render(flashId) {
     });
   });
 
-  // Expand
   document.querySelectorAll('.expand-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.id;
@@ -717,7 +704,6 @@ function render(flashId) {
     });
   });
 
-  // Rename
   document.querySelectorAll('.rename-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -725,7 +711,6 @@ function render(flashId) {
     });
   });
 
-  // Delete item
   document.querySelectorAll('.action-btn.del').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -742,7 +727,6 @@ function render(flashId) {
     });
   });
 
-  // Delete single history entry
   document.querySelectorAll('.history-del').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -763,7 +747,6 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 1600);
 }
 
-// ===== Modal =====
 function openModal(editId) {
   editingId = editId || null;
   const data = getData();
@@ -816,7 +799,6 @@ document.getElementById('inputEmoji').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('modalConfirm').click();
 });
 
-// ===== Export / Import =====
 document.getElementById('exportBtn').addEventListener('click', () => {
   const data = getData();
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -858,10 +840,8 @@ document.getElementById('importFile').addEventListener('change', (e) => {
   reader.readAsText(file);
 });
 
-// ===== Auto-refresh time display =====
 setInterval(() => render(), 60000);
 
-// ===== Init =====
 render();
 
 if ('serviceWorker' in navigator) {
