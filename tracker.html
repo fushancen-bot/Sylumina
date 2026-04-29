@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>小山的记录</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="记录">
+  <meta name="theme-color" content="#f3f2ee">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f3f2ee;
+      --card: rgba(255,255,255,0.75);
+      --card-hover: rgba(255,255,255,0.92);
+      --text: #2c2c2c;
+      --text-sub: rgba(44,44,44,0.52);
+      --text-faint: rgba(44,44,44,0.28);
+      --border: rgba(0,0,0,0.05);
+      --sage: #7a8c73;
+      --sage-bg: rgba(122,140,115,0.09);
+      --sage-mid: rgba(122,140,115,0.3);
+      --sage-full: #647d5a;
+      --warm: rgba(180,140,100,0.7);
+      --font: -apple-system, 'Helvetica Neue', 'PingFang SC', sans-serif;
+      --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: var(--font);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes ripple {
+      0% { transform: scale(0.92); opacity: 0.6; }
+      60% { transform: scale(1.06); opacity: 0.15; }
+      100% { transform: scale(1); opacity: 0; }
+    }
+    @keyframes logPop {
+      0% { transform: scale(1); }
+      35% { transform: scale(1.18); }
+      65% { transform: scale(0.95); }
+      100% { transform: scale(1); }
+    }
+    @keyframes flashGreen {
+      0% { background: var(--card); }
+      25% { background: rgba(122,140,115,0.14); }
+      100% { background: var(--card); }
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== Header ===== */
+    .header {
+      padding: 52px 20px 4px;
+      animation: fadeUp 0.45s ease-out both;
+    }
+    .header-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+    .header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .header-sub {
+      font-size: 13px;
+      color: var(--text-faint);
+      margin-top: 3px;
+    }
+
+    /* ===== Main content ===== */
+    .container {
+      padding: 16px 16px 100px;
+    }
+
+    /* ===== Item card ===== */
+    .item-card {
+      background: var(--card);
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      animation: fadeUp 0.4s ease-out both;
+      transition: background 0.4s ease;
+    }
+    .item-card.flash { animation: flashGreen 0.55s ease; }
+
+    .item-main {
+      display: flex;
+      align-items: center;
+      padding: 14px 14px 14px 16px;
+      gap: 12px;
+    }
+
+    .item-emoji {
+      font-size: 22px;
+      flex-shrink: 0;
+      width: 32px;
+      text-align: center;
+    }
+
+    .item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .item-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .item-since {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-top: 3px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .item-since .dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--sage-mid);
+      flex-shrink: 0;
+    }
+    .item-since.recent .dot { background: var(--sage); }
+    .item-since.recent { color: var(--sage-full); }
+    .item-since.never { color: var(--text-faint); }
+
+    /* Log button */
+    .log-btn {
+      flex-shrink: 0;
+      width: 44px; height: 44px;
+      border-radius: 14px;
+      border: none;
+      background: var(--sage-bg);
+      color: var(--sage-full);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .log-btn:active {
+      background: var(--sage-mid);
+      transform: scale(0.93);
+    }
+    .log-btn.popping { animation: logPop 0.35s ease; }
+
+    /* Expand toggle */
+    .item-expand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px 0 60px;
+      padding-bottom: 0;
+    }
+    .expand-btn {
+      font-size: 11px;
+      color: var(--text-faint);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px 0 12px;
+      display: flex; align-items: center; gap: 4px;
+      transition: color 0.15s;
+    }
+    .expand-btn:hover { color: var(--text-sub); }
+    .expand-chevron {
+      transition: transform 0.2s;
+      font-size: 9px;
+    }
+    .expand-chevron.open { transform: rotate(180deg); }
+
+    .item-actions {
+      display: flex; gap: 6px;
+      padding-bottom: 12px;
+      padding-right: 16px;
+    }
+    .action-btn {
+      font-size: 11px;
+      color: var(--text-faint);
+      background: none;
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 7px;
+      padding: 4px 9px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .action-btn:hover { color: var(--text-sub); border-color: rgba(0,0,0,0.13); }
+    .action-btn.del:hover { color: rgba(180,60,60,0.7); border-color: rgba(180,60,60,0.2); }
+
+    /* ===== Dot grid heatmap ===== */
+    .dot-grid-wrap {
+      padding: 2px 16px 10px 60px;
+    }
+    .dot-grid-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .dot-grid-label {
+      font-size: 9px;
+      color: var(--text-faint);
+      letter-spacing: 0.04em;
+    }
+    .dot-grid {
+      display: grid;
+      grid-template-rows: repeat(7, 9px);
+      grid-template-columns: repeat(10, 9px);
+      grid-auto-flow: column;
+      gap: 2.5px;
+    }
+    .dot-cell {
+      width: 9px;
+      height: 9px;
+      border-radius: 2px;
+      background: rgba(0,0,0,0.055);
+      transition: background 0.2s;
+    }
+    .dot-cell.lvl1 { background: rgba(122,140,115,0.28); }
+    .dot-cell.lvl2 { background: rgba(122,140,115,0.55); }
+    .dot-cell.lvl3 { background: rgba(100,125,90,0.82); }
+    .dot-cell.future { background: transparent; }
+    .dot-grid-foot {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+    }
+    .dot-grid-foot-label {
+      font-size: 9px;
+      color: var(--text-faint);
+    }
+
+    /* ===== History list ===== */
+    .history-area {
+      display: none;
+      border-top: 1px solid var(--border);
+      padding: 12px 16px 4px 60px;
+    }
+    .history-area.open { display: block; }
+    .history-title {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 8px;
+    }
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-bottom: 10px;
+    }
+    .history-entry {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+    .history-entry:last-child { border-bottom: none; }
+    .history-time {
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+    .history-ago {
+      font-size: 12px;
+      color: var(--text-faint);
+    }
+    .history-del {
+      font-size: 12px;
+      color: rgba(180,60,60,0.4);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 5px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .history-del:hover { color: rgba(180,60,60,0.7); background: rgba(180,60,60,0.05); }
+    .history-empty {
+      font-size: 13px;
+      color: var(--text-faint);
+      padding: 4px 0 10px;
+    }
+
+    /* ===== Add button ===== */
+    .add-wrap {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+    .add-btn {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--sage);
+      color: #fff;
+      font-size: 15px; font-weight: 600;
+      border: none;
+      border-radius: 999px;
+      padding: 13px 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(100,125,90,0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .add-btn:active {
+      transform: scale(0.95);
+      box-shadow: 0 2px 10px rgba(100,125,90,0.25);
+    }
+    .add-btn .plus { font-size: 18px; font-weight: 400; line-height: 1; }
+
+    /* ===== Tool row ===== */
+    .tool-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      animation: fadeUp 0.4s ease-out 0.05s both;
+    }
+    .tool-btn {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 12px;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: background 0.15s;
+      box-shadow: var(--shadow);
+    }
+    .tool-btn:active { background: var(--card-hover); }
+
+    /* ===== Toast ===== */
+    .toast {
+      position: fixed;
+      bottom: 104px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(44,44,44,0.88);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 9px 18px;
+      border-radius: 999px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+      white-space: nowrap;
+      z-index: 20;
+    }
+    .toast.show {
+      opacity: 1;
+      animation: toastIn 0.25s ease-out;
+    }
+
+    /* ===== Modal ===== */
+    .modal-bg {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.18);
+      backdrop-filter: blur(4px);
+      z-index: 30;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-bg.open { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 22px 22px 0 0;
+      padding: 20px 20px 40px;
+      width: 100%;
+      max-width: 480px;
+      animation: fadeUp 0.25s ease-out;
+    }
+    .modal-title {
+      font-size: 16px; font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+    .modal-field {
+      display: flex; flex-direction: column; gap: 6px;
+      margin-bottom: 14px;
+    }
+    .modal-label {
+      font-size: 12px; font-weight: 600;
+      color: var(--text-faint);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .modal-input {
+      font-size: 16px;
+      padding: 11px 14px;
+      border: 1.5px solid rgba(0,0,0,0.1);
+      border-radius: 12px;
+      outline: none;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--bg);
+      transition: border-color 0.15s;
+    }
+    .modal-input:focus { border-color: var(--sage); }
+    .modal-emoji-hint {
+      font-size: 12px; color: var(--text-faint);
+      margin-top: 2px;
+    }
+    .modal-btns {
+      display: flex; gap: 8px; margin-top: 6px;
+    }
+    .modal-cancel {
+      flex: 1;
+      padding: 13px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      font-size: 15px; font-weight: 500;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+    .modal-confirm {
+      flex: 2;
+      padding: 13px;
+      background: var(--sage);
+      border: none;
+      border-radius: 13px;
+      font-size: 15px; font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    /* ===== Empty state ===== */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-faint);
+    }
+    .empty-state .e-emoji { font-size: 40px; margin-bottom: 12px; }
+    .empty-state .e-msg { font-size: 14px; line-height: 1.6; }
+
+    input[type="file"] { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-row">
+    <h1>记录</h1>
+  </div>
+  <div class="header-sub">上次是什么时候？</div>
+</div>
+
+<div class="container">
+  <div class="tool-row">
+    <button class="tool-btn" id="exportBtn">📤 导出</button>
+    <button class="tool-btn" id="importBtn">📥 导入</button>
+  </div>
+  <input type="file" id="importFile" accept=".json">
+
+  <div id="itemList"></div>
+</div>
+
+<div class="add-wrap">
+  <button class="add-btn" id="addBtn">
+    <span class="plus">+</span> 添加记录项
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">添加记录项</div>
+    <div class="modal-field">
+      <div class="modal-label">名称</div>
+      <input class="modal-input" id="inputName" type="text" placeholder="比如：喝奶茶">
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">Emoji</div>
+      <input class="modal-input" id="inputEmoji" type="text" placeholder="🧋" maxlength="4">
+      <div class="modal-emoji-hint">随便一个都行，留空也OK</div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-cancel" id="modalCancel">取消</button>
+      <button class="modal-confirm" id="modalConfirm">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'xiaoshanTracker_v1';
+
+function getData() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { items: [], log: [] };
+  } catch { return { items: [], log: [] }; }
+}
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+
+function timeSince(ts) {
+  if (!ts) return null;
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  const hrs = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (mins < 1) return { text: '刚刚', level: 'recent' };
+  if (mins < 60) return { text: `${mins} 分钟前`, level: 'recent' };
+  if (hrs < 24) return { text: `${hrs} 小时前`, level: 'normal' };
+  if (days === 1) return { text: '昨天', level: 'normal' };
+  if (days < 7) return { text: `${days} 天前`, level: 'normal' };
+  if (days < 30) return { text: `${Math.floor(days/7)} 周前`, level: 'old' };
+  if (days < 365) return { text: `${Math.floor(days/30)} 个月前`, level: 'old' };
+  return { text: `${Math.floor(days/365)} 年前`, level: 'old' };
+}
+
+function formatTime(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const yd = new Date(now); yd.setDate(yd.getDate() - 1);
+  const isYesterday = d.toDateString() === yd.toDateString();
+  const hm = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  if (isToday) return `今天 ${hm}`;
+  if (isYesterday) return `昨天 ${hm}`;
+  return `${d.getMonth()+1}月${d.getDate()}日 ${hm}`;
+}
+
+let expandedId = null;
+let editingId = null;
+
+// Build a GitHub-style 10-week dot grid
+function buildDotGrid(entries) {
+  const WEEKS = 10;
+  const DAYS = WEEKS * 7; // 70 days
+
+  // Count events per day (keyed by YYYY-MM-DD)
+  const counts = {};
+  entries.forEach(e => {
+    const d = new Date(e.time);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  // Build array: index 0 = oldest day, index 69 = today
+  // The grid starts on the Monday that is >= DAYS ago
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  // Snap back to Monday of current week
+  const todayDow = (today.getDay() + 6) % 7; // 0=Mon..6=Sun
+  const gridEnd = new Date(today);
+  gridEnd.setDate(today.getDate() + (6 - todayDow)); // end on next Sunday (or today if Sun)
+  const gridStart = new Date(gridEnd);
+  gridStart.setDate(gridEnd.getDate() - (WEEKS * 7 - 1));
+
+  const cells = [];
+  for (let i = 0; i < WEEKS * 7; i++) {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + i);
+    const isFuture = d > today;
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    const count = counts[key] || 0;
+    let lvl = '';
+    if (!isFuture) {
+      if (count === 0) lvl = '';
+      else if (count === 1) lvl = 'lvl1';
+      else if (count === 2) lvl = 'lvl2';
+      else lvl = 'lvl3';
+    } else {
+      lvl = 'future';
+    }
+    cells.push(`<div class="dot-cell ${lvl}" title="${isFuture ? '' : formatDate(d) + (count ? '：' + count + '次' : '')}"></div>`);
+  }
+
+  // Month labels: find first day of each month within grid
+  const labelParts = [];
+  let lastMonth = -1;
+  for (let i = 0; i < WEEKS * 7; i++) {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + i);
+    if (d.getMonth() !== lastMonth) {
+      lastMonth = d.getMonth();
+      const weekCol = Math.floor(i / 7);
+      labelParts.push({ col: weekCol, label: `${d.getMonth()+1}月` });
+    }
+  }
+
+  // Build label row with positioned spans
+  const labelSpans = Array(WEEKS).fill('');
+  labelParts.forEach(p => { if (p.col < WEEKS) labelSpans[p.col] = p.label; });
+  const labelRow = labelSpans.map(l =>
+    `<span class="dot-grid-label">${l}</span>`
+  ).join('');
+
+  return `<div class="dot-grid-wrap">
+    <div class="dot-grid-labels">${labelRow}</div>
+    <div class="dot-grid">${cells.join('')}</div>
+  </div>`;
+}
+
+function formatDate(d) {
+  return `${d.getMonth()+1}月${d.getDate()}日`;
+}
+
+function render(flashId) {
+  const data = getData();
+  const list = document.getElementById('itemList');
+
+  if (data.items.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="e-emoji">🌿</div>
+      <div class="e-msg">还没有任何记录项<br>点下面的按钮开始添加吧</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = data.items.map((item, idx) => {
+    const entries = (data.log || [])
+      .filter(e => e.itemId === item.id)
+      .sort((a, b) => b.time - a.time);
+    const last = entries[0];
+    const since = last ? timeSince(last.time) : null;
+    const isExpanded = expandedId === item.id;
+    const flashClass = flashId === item.id ? ' flash' : '';
+
+    const sinceHtml = since
+      ? `<div class="item-since ${since.level}">
+          <div class="dot"></div>
+          上次：${since.text}
+          ${entries.length > 1 ? `<span style="color:var(--text-faint);font-size:11px;">（共${entries.length}次）</span>` : ''}
+        </div>`
+      : `<div class="item-since never">还没有记录过</div>`;
+
+    const historyRows = entries.slice(0, 20).map((e, ei) => `
+      <div class="history-entry">
+        <span class="history-time">${formatTime(e.time)}</span>
+        <span class="history-ago">${timeSince(e.time).text}</span>
+        <button class="history-del" data-item="${item.id}" data-ts="${e.time}">✕</button>
+      </div>`).join('');
+
+    return `<div class="item-card${flashClass}" id="icard-${item.id}" style="animation-delay:${idx * 0.04}s">
+      <div class="item-main">
+        <div class="item-emoji">${item.emoji || '·'}</div>
+        <div class="item-info">
+          <div class="item-name">${item.name}</div>
+          ${sinceHtml}
+        </div>
+        <button class="log-btn" data-id="${item.id}" title="记录一次">＋</button>
+      </div>
+      ${buildDotGrid(entries)}
+      <div class="item-expand-row">
+        <button class="expand-btn" data-id="${item.id}">
+          历史记录
+          <span class="expand-chevron ${isExpanded ? 'open' : ''}">▾</span>
+        </button>
+        <div class="item-actions">
+          <button class="action-btn rename-btn" data-id="${item.id}">重命名</button>
+          <button class="action-btn del btn del" data-id="${item.id}">删除</button>
+        </div>
+      </div>
+      <div class="history-area ${isExpanded ? 'open' : ''}">
+        <div class="history-title">历史记录</div>
+        <div class="history-list">
+          ${entries.length ? historyRows : '<div class="history-empty">暂无记录</div>'}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Log button
+  document.querySelectorAll('.log-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      btn.classList.add('popping');
+      btn.addEventListener('animationend', () => btn.classList.remove('popping'), { once: true });
+      const data = getData();
+      if (!data.log) data.log = [];
+      data.log.push({ itemId: id, time: Date.now() });
+      saveData(data);
+      render(id);
+      showToast('已记录 ✦');
+    });
+  });
+
+  // Expand
+  document.querySelectorAll('.expand-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      expandedId = expandedId === id ? null : id;
+      render();
+    });
+  });
+
+  // Rename
+  document.querySelectorAll('.rename-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openModal(btn.dataset.id);
+    });
+  });
+
+  // Delete item
+  document.querySelectorAll('.action-btn.del').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const data = getData();
+      const item = data.items.find(i => i.id === id);
+      if (!item) return;
+      if (!confirm(`删除「${item.name}」和它的所有记录？`)) return;
+      data.items = data.items.filter(i => i.id !== id);
+      data.log = (data.log || []).filter(e => e.itemId !== id);
+      if (expandedId === id) expandedId = null;
+      saveData(data);
+      render();
+    });
+  });
+
+  // Delete single history entry
+  document.querySelectorAll('.history-del').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.item;
+      const ts = parseInt(btn.dataset.ts);
+      const data = getData();
+      data.log = (data.log || []).filter(e => !(e.itemId === id && e.time === ts));
+      saveData(data);
+      render();
+    });
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+// ===== Modal =====
+function openModal(editId) {
+  editingId = editId || null;
+  const data = getData();
+  const modal = document.getElementById('modalBg');
+  document.getElementById('modalTitle').textContent = editId ? '编辑' : '添加记录项';
+  if (editId) {
+    const item = data.items.find(i => i.id === editId);
+    document.getElementById('inputName').value = item?.name || '';
+    document.getElementById('inputEmoji').value = item?.emoji || '';
+  } else {
+    document.getElementById('inputName').value = '';
+    document.getElementById('inputEmoji').value = '';
+  }
+  modal.classList.add('open');
+  setTimeout(() => document.getElementById('inputName').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('open');
+  editingId = null;
+}
+
+document.getElementById('addBtn').addEventListener('click', () => openModal(null));
+document.getElementById('modalCancel').addEventListener('click', closeModal);
+document.getElementById('modalBg').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('modalBg')) closeModal();
+});
+
+document.getElementById('modalConfirm').addEventListener('click', () => {
+  const name = document.getElementById('inputName').value.trim();
+  if (!name) { document.getElementById('inputName').focus(); return; }
+  const emoji = document.getElementById('inputEmoji').value.trim() || '✦';
+  const data = getData();
+  if (editingId) {
+    const item = data.items.find(i => i.id === editingId);
+    if (item) { item.name = name; item.emoji = emoji; }
+  } else {
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    data.items.push({ id, name, emoji });
+  }
+  saveData(data);
+  closeModal();
+  render();
+});
+
+document.getElementById('inputName').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('inputEmoji').focus();
+});
+document.getElementById('inputEmoji').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('modalConfirm').click();
+});
+
+// ===== Export / Import =====
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const data = getData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  a.href = url;
+  a.download = `记录-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('importBtn').addEventListener('click', () => {
+  document.getElementById('importFile').click();
+});
+
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (!imported.items) throw new Error();
+      const existing = getData();
+      const existingIds = new Set(existing.items.map(i => i.id));
+      (imported.items || []).forEach(item => {
+        if (!existingIds.has(item.id)) existing.items.push(item);
+      });
+      (imported.log || []).forEach(entry => existing.log.push(entry));
+      saveData(existing);
+      render();
+      showToast('导入成功 📦');
+    } catch {
+      alert('文件格式不对，请选择之前导出的 JSON 文件');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+// ===== Auto-refresh time display =====
+setInterval(() => render(), 60000);
+
+// ===== Init =====
+render();
+</script>
+</body>
+</html>
