@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文库</title>
+<style>
+  :root {
+    --bg: #f2f1ed; --sidebar: rgba(255,255,255,0.72); --border: rgba(0,0,0,0.06);
+    --card: #ffffff; --card-hov: #f8f8f6; --shadow: 0 1px 3px rgba(0,0,0,0.05);
+    --tx: #1d1d1f; --tx2: #86868b; --tx3: #aeaeb2;
+    --acc: #d49a3e; --acc-soft: rgba(212,154,62,0.1);
+    --div: rgba(0,0,0,0.05); --editor: #ffffff; --search: rgba(0,0,0,0.04);
+    --tag-bg: rgba(0,0,0,0.04); --sel: rgba(212,154,62,0.12);
+    --tag-故事: #d49a3e; --tag-脑洞: #6ba67a; --tag-角色: #b86da0; --tag-片段: #6897b4;
+  }
+  [data-theme="frost"] {
+    --bg: #e8eaed; --sidebar: rgba(255,255,255,0.45); --border: rgba(255,255,255,0.3);
+    --card: rgba(255,255,255,0.55); --card-hov: rgba(255,255,255,0.72);
+    --shadow: 0 1px 4px rgba(0,0,0,0.06), inset 0 0.5px 0 rgba(255,255,255,0.5);
+    --tx: #1a1a2e; --tx2: #6b6b80; --tx3: #9d9db0;
+    --acc: #5e7ce2; --acc-soft: rgba(94,124,226,0.1);
+    --div: rgba(255,255,255,0.3); --editor: rgba(255,255,255,0.5);
+    --search: rgba(255,255,255,0.35); --tag-bg: rgba(94,124,226,0.08);
+    --sel: rgba(94,124,226,0.1);
+    --tag-故事: #5e7ce2; --tag-脑洞: #4bb882; --tag-角色: #a06dc4; --tag-片段: #6d8eb4;
+  }
+  [data-theme="green"] {
+    --bg: #eef2ec; --sidebar: rgba(245,248,243,0.78); --border: rgba(60,80,50,0.06);
+    --card: rgba(255,255,255,0.7); --card-hov: rgba(255,255,255,0.85);
+    --shadow: 0 1px 3px rgba(40,70,30,0.06);
+    --tx: #2a3328; --tx2: #6e7d6a; --tx3: #a0ac9c;
+    --acc: #5a8c5e; --acc-soft: rgba(90,140,94,0.1);
+    --div: rgba(60,80,50,0.06); --editor: rgba(255,255,255,0.65);
+    --search: rgba(60,80,50,0.04); --tag-bg: rgba(90,140,94,0.08);
+    --sel: rgba(90,140,94,0.1);
+    --tag-故事: #5a8c5e; --tag-脑洞: #7aa84e; --tag-角色: #9a7ab8; --tag-片段: #5d8a7a;
+  }
+  [data-theme="dark"] {
+    --bg: #161618; --sidebar: rgba(30,30,32,0.85); --border: rgba(255,255,255,0.06);
+    --card: rgba(44,44,48,0.6); --card-hov: rgba(54,54,58,0.75);
+    --shadow: 0 1px 3px rgba(0,0,0,0.3), inset 0 0.5px 0 rgba(255,255,255,0.04);
+    --tx: #e5e5e7; --tx2: #8e8e93; --tx3: #636366;
+    --acc: #d4a574; --acc-soft: rgba(212,165,116,0.12);
+    --div: rgba(255,255,255,0.06); --editor: rgba(28,28,30,0.9);
+    --search: rgba(255,255,255,0.06); --tag-bg: rgba(212,165,116,0.1);
+    --sel: rgba(212,165,116,0.1);
+    --tag-故事: #d4a574; --tag-脑洞: #8bc7a3; --tag-角色: #c49abd; --tag-片段: #8aafc4;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    background: var(--bg); color: var(--tx);
+    transition: background 0.5s, color 0.4s;
+    height: 100vh; overflow: hidden;
+  }
+  .app { display: flex; height: 100vh; }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    width: 18px; min-width: 18px; height: 100%;
+    background: transparent;
+    display: flex; flex-direction: column;
+    transition: all 0.28s cubic-bezier(.25,.1,.25,1);
+    overflow: hidden; position: relative; z-index: 10;
+  }
+  .sidebar.expanded {
+    width: 200px; min-width: 200px;
+    background: var(--sidebar);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-right: 0.5px solid var(--border);
+  }
+  .sidebar-hint {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0.15; transition: opacity 0.3s;
+  }
+  .sidebar.expanded .sidebar-hint { opacity: 0; pointer-events: none; }
+  .sidebar-hint-bar { width: 2.5px; height: 32px; border-radius: 2px; background: var(--tx3); }
+  .sidebar-content {
+    opacity: 0; transition: opacity 0.22s; pointer-events: none;
+    display: flex; flex-direction: column; height: 100%;
+  }
+  .sidebar.expanded .sidebar-content { opacity: 1; pointer-events: auto; }
+  .sidebar-header {
+    padding: 50px 14px 8px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+    color: var(--tx3); text-transform: uppercase;
+  }
+  .nav-items { padding: 0 6px; display: flex; flex-direction: column; gap: 1px; }
+  .nav-item {
+    padding: 7px 10px; border-radius: 7px;
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer; font-size: 13.5px; color: var(--tx2);
+    font-weight: 400; transition: background 0.15s; border: none; background: none;
+    width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--sel); }
+  .nav-item.active { background: var(--sel); color: var(--tx); font-weight: 500; }
+  .nav-icon { font-size: 10px; opacity: 0.5; width: 14px; text-align: center; }
+  .nav-count { font-size: 11px; color: var(--tx3); margin-left: auto; }
+  .sidebar-bottom { margin-top: auto; padding: 12px 8px; }
+  .btn-new {
+    padding: 8px 16px; border-radius: 8px; border: none;
+    background: var(--acc-soft); color: var(--acc);
+    cursor: pointer; font-size: 13px; font-weight: 500;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .btn-new:hover { filter: brightness(1.05); }
+  .topbar .btn-new { margin-left: auto; }
+  .sidebar-search { padding: 4px 8px 6px; }
+  .sidebar-search .search-box { flex: 0 0 auto; max-width: none; width: 100%; }
+
+  /* ===== CONTENT ===== */
+  .content {
+    flex: 1; display: flex; flex-direction: column; overflow: hidden;
+    transition: opacity 0.3s;
+  }
+  .content.dimmed { opacity: 0.88; }
+  .topbar { padding: 50px 28px 12px; display: flex; align-items: center; gap: 10px; }
+  .search-box {
+    flex: 1; max-width: 340px; padding: 7px 13px; border-radius: 10px;
+    background: var(--search); display: flex; align-items: center; gap: 8px;
+    font-size: 13.5px; color: var(--tx3); border: none; outline: none;
+  }
+  .search-box input {
+    background: none; border: none; outline: none; color: var(--tx);
+    font-size: 13.5px; font-family: inherit; width: 100%;
+  }
+  .search-box input::placeholder { color: var(--tx3); }
+  .page-title {
+    padding: 4px 28px 14px;
+    font-size: 24px; font-weight: 700; letter-spacing: -0.02em;
+    max-width: 800px; margin-left: auto; margin-right: auto; width: 100%;
+  }
+
+  /* ===== NOTES LIST ===== */
+  .notes-list {
+    flex: 1; overflow-y: auto; padding: 0 28px 28px;
+    display: flex; flex-direction: column; gap: 5px;
+    max-width: 800px; margin-left: auto; margin-right: auto; width: 100%;
+  }
+  .note-card {
+    padding: 13px 15px; border-radius: 11px; background: var(--card);
+    backdrop-filter: blur(12px); box-shadow: var(--shadow);
+    cursor: pointer; transition: background 0.2s, transform 0.2s;
+  }
+  .note-card:hover { background: var(--card-hov); transform: translateY(-0.5px); }
+  .note-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .note-title-row { display: flex; align-items: center; gap: 6px; }
+  .pin-dot { font-size: 9px; color: var(--acc); }
+  .note-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .note-date { font-size: 11.5px; color: var(--tx3); flex-shrink: 0; margin-left: 10px; }
+  .note-meta { display: flex; align-items: center; gap: 8px; }
+  .note-tag {
+    font-size: 10.5px; font-weight: 500; padding: 1.5px 7px; border-radius: 5px;
+    background: var(--tag-bg); flex-shrink: 0;
+  }
+  .note-preview {
+    font-size: 13px; color: var(--tx2); overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; line-height: 1.5;
+  }
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--tx3); font-size: 14px;
+  }
+
+  /* ===== EDITOR ===== */
+  .editor-view { flex: 1; overflow-y: auto; padding: 0 28px 28px; }
+  .editor-back-bar {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+  }
+  .btn-back {
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; gap: 4px;
+    color: var(--acc); font-size: 14.5px; font-weight: 500; padding: 4px 0;
+  }
+  .editor-actions { display: flex; gap: 12px; }
+  .editor-actions button {
+    font-size: 13px; color: var(--tx3); cursor: pointer;
+    background: none; border: none; font-family: inherit;
+    transition: color 0.2s;
+  }
+  .editor-actions button:hover { color: var(--acc); }
+  .editor-actions button.danger:hover { color: #d45050; }
+  .editor-surface {
+    background: var(--editor); backdrop-filter: blur(16px); border-radius: 13px;
+    padding: 26px 30px; box-shadow: var(--shadow); min-height: calc(100vh - 190px);
+  }
+  .editor-tag-row { margin-bottom: 11px; display: flex; align-items: center; gap: 6px; }
+  .editor-tag-btn {
+    font-size: 10.5px; font-weight: 500; padding: 2px 8px; border-radius: 5px;
+    background: var(--tag-bg); border: none; cursor: pointer;
+    font-family: inherit; transition: opacity 0.2s;
+  }
+  .editor-tag-btn:hover { opacity: 0.7; }
+  .editor-tag-btn.active { outline: 1.5px solid var(--acc); }
+  .editor-title-input {
+    font-size: 23px; font-weight: 700; letter-spacing: -0.02em;
+    margin: 0 0 4px; line-height: 1.3; border: none; outline: none;
+    background: none; color: var(--tx); width: 100%; font-family: inherit;
+  }
+  .editor-title-input::placeholder { color: var(--tx3); }
+  .editor-date {
+    font-size: 12.5px; color: var(--tx3); margin-bottom: 22px; padding-bottom: 16px;
+    border-bottom: 0.5px solid var(--div);
+  }
+  .editor-body {
+    font-size: 15px; line-height: 1.9; white-space: pre-wrap; letter-spacing: 0.01em;
+    border: none; outline: none; background: none; color: var(--tx);
+    width: 100%; min-height: 300px; resize: none; font-family: inherit;
+    field-sizing: content;
+  }
+
+  /* ===== TAG PICKER ===== */
+  .tag-picker {
+    position: absolute; background: var(--card); border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12); padding: 6px;
+    display: flex; flex-direction: column; gap: 2px; z-index: 50;
+    backdrop-filter: blur(20px); border: 0.5px solid var(--border);
+  }
+  .tag-picker button {
+    padding: 6px 14px; border-radius: 6px; border: none;
+    background: none; cursor: pointer; font-size: 13px;
+    font-family: inherit; text-align: left; color: var(--tx);
+    transition: background 0.15s;
+  }
+  .tag-picker button:hover { background: var(--sel); }
+
+  /* ===== THEME SWITCHER ===== */
+  .theme-switcher {
+    position: fixed; top: 12px; right: 14px; z-index: 100;
+    display: flex; gap: 2px; padding: 3px; border-radius: 10px;
+    background: var(--sidebar); backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 1px 5px rgba(0,0,0,0.06); border: 0.5px solid var(--border);
+  }
+  .theme-btn {
+    padding: 4px 9px; border-radius: 7px; border: none; cursor: pointer;
+    font-size: 12px; font-weight: 500; line-height: 18px;
+    background: transparent; color: var(--tx3); transition: all 0.25s;
+  }
+  .theme-btn.active { background: var(--acc); color: #fff; }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.12); border-radius: 2px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  /* ===== DELETE CONFIRM ===== */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.3); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; z-index: 200;
+  }
+  .modal {
+    background: var(--card); border-radius: 14px; padding: 24px 28px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.15); max-width: 320px; text-align: center;
+    backdrop-filter: blur(20px); border: 0.5px solid var(--border);
+  }
+  .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .modal p { font-size: 14px; color: var(--tx2); margin-bottom: 20px; line-height: 1.5; }
+  .modal-buttons { display: flex; gap: 10px; justify-content: center; }
+  .modal-buttons button {
+    padding: 8px 20px; border-radius: 8px; border: none;
+    font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+  }
+  .modal-cancel { background: var(--search); color: var(--tx2); }
+  .modal-delete { background: #d45050; color: #fff; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-hint"><div class="sidebar-hint-bar"></div></div>
+    <div class="sidebar-content">
+      <div class="sidebar-header">文库</div>
+      <div class="sidebar-search">
+        <div class="search-box">
+          <span style="font-size:12px;opacity:0.45">⌕</span>
+          <input type="text" placeholder="搜索" id="searchInput" oninput="renderList()">
+        </div>
+      </div>
+      <div class="nav-items" id="navItems"></div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content" id="content">
+    <div class="topbar">
+      <button class="btn-new" onclick="createNote()">
+        <span style="font-size:16px;font-weight:300">+</span> 新建
+      </button>
+    </div>
+    <div id="listView">
+      <div class="page-title" id="pageTitle">全部笔记</div>
+      <div class="notes-list" id="notesList"></div>
+    </div>
+    <div id="editorView" style="display:none" class="editor-view"></div>
+  </div>
+</div>
+
+<!-- Theme switcher -->
+<div class="theme-switcher" id="themeSwitcher"></div>
+
+<!-- Delete modal -->
+<div class="modal-overlay" id="deleteModal" style="display:none">
+  <div class="modal">
+    <h3>删除笔记</h3>
+    <p id="deleteMsg">确定要删除这篇笔记吗？</p>
+    <div class="modal-buttons">
+      <button class="modal-cancel" onclick="closeDeleteModal()">取消</button>
+      <button class="modal-delete" onclick="confirmDelete()">删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const TAGS = ["故事", "脑洞", "角色", "片段"];
+const THEME_LIST = [
+  { key: "auto", label: "自动" },
+  { key: "light", label: "☀" },
+  { key: "frost", label: "❄" },
+  { key: "green", label: "🌿" },
+  { key: "dark", label: "🌙" },
+];
+
+const defaultNotes = [
+  {
+    id: "n1", title: "渡口·未完成", tag: "故事", pinned: true,
+    body: "她在渡口等了三天。江水涨了又退，退了又涨，像是呼吸。第三天傍晚，对岸亮起灯火的时候，她终于确认——他不会来了。\n\n不是负约。只是那个方向的路，在某个她看不见的拐角，无声无息地断了。\n\n渡船老人收拾缆绳，看了她一眼。\n\"姑娘，末班了。\"\n\"我知道。\"\n\n她没有转身走。她在想：如果她留在这里，留到明天、后天、大后天——留到这条江都干了，会不会就等到一个不同的结局。\n\n但她终究还是走了。\n\n码头石阶上留下一枚铜钱。不是船资，是她给自己投的卦——正面留、反面走。她没有看结果就走了。",
+    updated: Date.now(),
+  },
+  {
+    id: "n2", title: "脑洞：如果记忆可以典当", tag: "脑洞", pinned: false,
+    body: "世界观设定：记忆是硬通货。每个人出生时拥有\"原始记忆\"——对母体的感知，是不可交易的底层资产。\n\n此后所有记忆都可以在「忆典行」典当、出售、抵押。\n\n核心冲突：\n- 富人可以购买别人的童年，穷人卖掉初恋换房租\n- 主角是忆典行的鉴定师，负责评估记忆的\"市场价值\"\n- 她发现一批被回收的记忆中，有同一个不存在的城市反复出现\n\n待解决：\n这个城市到底是什么？集体潜意识？被删除的历史？还是某种记忆病毒？",
+    updated: Date.now() - 3 * 86400000,
+  },
+  {
+    id: "n3", title: "人物卡：沈鹤归", tag: "角色", pinned: false,
+    body: "前朝遗民，寄居药铺，表面沉默寡言实则内心戏极重。\n\n外貌：瘦长，常年穿洗到发白的青布衫。左手食指有旧伤，写字时会微微发抖。\n\n口癖：不说\"好\"，只说\"也行\"。\n\n核心矛盾：自认为是殉道者——为旧朝的文脉守灵。但其实他对旧朝并无多少真实感情，他守的是\"自己应该守\"这件事本身。\n\n关键场景：新朝修史，征召前朝旧臣参与。他拒绝了三次，第四次去了。不是因为妥协，是因为他突然意识到——如果旧朝的历史由别人来写，那他守了一辈子的东西，就真的只剩他自己的幻觉了。",
+    updated: Date.now() - 7 * 86400000,
+  },
+  {
+    id: "n4", title: "对话练习：审讯室", tag: "片段", pinned: false,
+    body: "\"你知道为什么叫你来。\"\n\"我只知道你们的椅子很硬。\"\n\"少废话。三月十四号晚上你在哪？\"\n\"在家。\"\n\"有人证明吗？\"\n\"我的猫。\"\n\"……\"\n\"它不会说谎。这一点我可以担保。\"\n\n（审讯者A对审讯者B：这人怎么回事）\n（审讯者B：惯犯了，每次都这样，问不出东西但也挑不出毛病）",
+    updated: Date.now() - 14 * 86400000,
+  },
+];
+
+// ===== STATE =====
+let notes = [];
+let activeFilter = "全部";
+let currentNoteId = null;
+let deleteTargetId = null;
+let themeChoice = "auto";
+
+// ===== STORAGE =====
+function loadNotes() {
+  const raw = localStorage.getItem("wk_notes");
+  if (raw) { try { notes = JSON.parse(raw); } catch { notes = [...defaultNotes]; } }
+  else { notes = [...defaultNotes]; }
+}
+function saveNotes() { localStorage.setItem("wk_notes", JSON.stringify(notes)); }
+function loadTheme() { themeChoice = localStorage.getItem("wk_theme") || "auto"; }
+function saveTheme() { localStorage.setItem("wk_theme", themeChoice); }
+
+// ===== THEME =====
+function getSystemDark() { return window.matchMedia("(prefers-color-scheme: dark)").matches; }
+function resolveTheme() {
+  if (themeChoice === "auto") return getSystemDark() ? "dark" : "light";
+  return themeChoice;
+}
+function applyTheme() {
+  document.body.setAttribute("data-theme", resolveTheme());
+  renderThemeSwitcher();
+}
+function setTheme(key) {
+  themeChoice = key;
+  saveTheme();
+  applyTheme();
+}
+function renderThemeSwitcher() {
+  const el = document.getElementById("themeSwitcher");
+  el.innerHTML = THEME_LIST.map(t =>
+    `<button class="theme-btn${themeChoice === t.key ? ' active' : ''}" onclick="setTheme('${t.key}')">${t.label}</button>`
+  ).join("");
+}
+
+// ===== DATE =====
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+// ===== TAG COLOR =====
+function tagColor(tag) { return `var(--tag-${tag})`; }
+
+// ===== NAV =====
+function renderNav() {
+  const counts = { 全部: notes.length };
+  TAGS.forEach(t => { counts[t] = notes.filter(n => n.tag === t).length; });
+  const icons = { 全部: "◇", 故事: "◈", 脑洞: "○", 角色: "△", 片段: "□" };
+  const el = document.getElementById("navItems");
+  el.innerHTML = ["全部", ...TAGS].map(t =>
+    `<button class="nav-item${activeFilter === t ? ' active' : ''}" onclick="filterBy('${t}')">
+      <span class="nav-icon">${icons[t]}</span>
+      <span style="flex:1">${t}</span>
+      <span class="nav-count">${counts[t] || 0}</span>
+    </button>`
+  ).join("");
+}
+
+function filterBy(tag) {
+  activeFilter = tag;
+  renderNav();
+  renderList();
+  document.getElementById("pageTitle").textContent = tag === "全部" ? "全部笔记" : tag;
+}
+
+// ===== SIDEBAR =====
+const sidebar = document.getElementById("sidebar");
+const content = document.getElementById("content");
+sidebar.addEventListener("mouseenter", () => {
+  if (!currentNoteId) { sidebar.classList.add("expanded"); content.classList.add("dimmed"); }
+});
+sidebar.addEventListener("mouseleave", () => {
+  sidebar.classList.remove("expanded"); content.classList.remove("dimmed");
+});
+
+// ===== LIST =====
+function getFiltered() {
+  const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+  let list = activeFilter === "全部" ? [...notes] : notes.filter(n => n.tag === activeFilter);
+  if (q) list = list.filter(n => n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q));
+  list.sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return b.updated - a.updated;
+  });
+  return list;
+}
+
+function renderList() {
+  const list = getFiltered();
+  const el = document.getElementById("notesList");
+  if (list.length === 0) {
+    el.innerHTML = '<div class="empty-state">还没有笔记，点「新建」开始写吧</div>';
+    return;
+  }
+  el.innerHTML = list.map(n => {
+    const preview = n.body.replace(/\n/g, " ").slice(0, 60) + (n.body.length > 60 ? "…" : "");
+    return `<div class="note-card" onclick="openNote('${n.id}')">
+      <div class="note-top">
+        <div class="note-title-row">
+          ${n.pinned ? '<span class="pin-dot">●</span>' : ''}
+          <span class="note-title">${esc(n.title || "无标题")}</span>
+        </div>
+        <span class="note-date">${fmtDate(n.updated)}</span>
+      </div>
+      <div class="note-meta">
+        <span class="note-tag" style="color:${tagColor(n.tag)}">${n.tag}</span>
+        <span class="note-preview">${esc(preview)}</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+// ===== EDITOR =====
+function openNote(id) {
+  currentNoteId = id;
+  const n = notes.find(x => x.id === id);
+  if (!n) return;
+  document.getElementById("listView").style.display = "none";
+  const ev = document.getElementById("editorView");
+  ev.style.display = "block";
+
+  ev.innerHTML = `
+    <div class="editor-back-bar">
+      <button class="btn-back" onclick="closeEditor()">
+        <span style="font-size:17px;font-weight:300">‹</span> 返回
+      </button>
+      <div class="editor-actions">
+        <button onclick="togglePin('${id}')" id="pinBtn">${n.pinned ? "取消置顶" : "置顶"}</button>
+        <button class="danger" onclick="showDeleteModal('${id}')">删除</button>
+      </div>
+    </div>
+    <div class="editor-surface">
+      <div class="editor-tag-row" id="tagRow" style="position:relative">
+        ${TAGS.map(t =>
+          `<button class="editor-tag-btn${n.tag === t ? ' active' : ''}"
+            style="color:${tagColor(t)}"
+            onclick="changeTag('${id}','${t}')">${t}</button>`
+        ).join("")}
+      </div>
+      <input class="editor-title-input" placeholder="标题" value="${esc(n.title)}"
+        oninput="updateTitle('${id}', this.value)">
+      <div class="editor-date">${fmtDate(n.updated)} · 已编辑</div>
+      <textarea class="editor-body" placeholder="开始写点什么…"
+        oninput="updateBody('${id}', this.value)">${esc(n.body)}</textarea>
+    </div>`;
+
+  // Auto-resize textarea
+  setTimeout(() => {
+    const ta = ev.querySelector(".editor-body");
+    if (ta) { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
+  }, 0);
+}
+
+function closeEditor() {
+  currentNoteId = null;
+  document.getElementById("editorView").style.display = "none";
+  document.getElementById("listView").style.display = "block";
+  renderList();
+  renderNav();
+}
+
+function updateTitle(id, val) {
+  const n = notes.find(x => x.id === id);
+  if (n) { n.title = val; n.updated = Date.now(); saveNotes(); }
+}
+function updateBody(id, val) {
+  const n = notes.find(x => x.id === id);
+  if (n) {
+    n.body = val; n.updated = Date.now(); saveNotes();
+    const ta = document.querySelector(".editor-body");
+    if (ta) { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
+  }
+}
+function changeTag(id, tag) {
+  const n = notes.find(x => x.id === id);
+  if (n) { n.tag = tag; n.updated = Date.now(); saveNotes(); openNote(id); }
+}
+function togglePin(id) {
+  const n = notes.find(x => x.id === id);
+  if (n) { n.pinned = !n.pinned; saveNotes(); openNote(id); }
+}
+
+// ===== CREATE =====
+function createNote() {
+  const id = "n" + Date.now();
+  const n = { id, title: "", tag: "故事", pinned: false, body: "", updated: Date.now() };
+  notes.unshift(n);
+  saveNotes();
+  renderNav();
+  sidebar.classList.remove("expanded");
+  content.classList.remove("dimmed");
+  openNote(id);
+  setTimeout(() => {
+    const inp = document.querySelector(".editor-title-input");
+    if (inp) inp.focus();
+  }, 50);
+}
+
+// ===== DELETE =====
+function showDeleteModal(id) {
+  deleteTargetId = id;
+  const n = notes.find(x => x.id === id);
+  document.getElementById("deleteMsg").textContent = `确定要删除「${n?.title || "无标题"}」吗？`;
+  document.getElementById("deleteModal").style.display = "flex";
+}
+function closeDeleteModal() {
+  deleteTargetId = null;
+  document.getElementById("deleteModal").style.display = "none";
+}
+function confirmDelete() {
+  if (deleteTargetId) {
+    notes = notes.filter(n => n.id !== deleteTargetId);
+    saveNotes();
+    closeDeleteModal();
+    closeEditor();
+  }
+}
+
+// ===== INIT =====
+loadNotes();
+loadTheme();
+applyTheme();
+renderNav();
+renderList();
+
+// Listen for system theme changes
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if (themeChoice === "auto") applyTheme();
+});
+</script>
+</body>
+</html>
