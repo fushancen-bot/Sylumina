@@ -217,8 +217,9 @@
       padding: 2px 16px 10px 60px;
     }
     .dot-grid-labels {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: repeat(10, 9px);
+      gap: 2.5px;
       margin-bottom: 4px;
     }
     .dot-grid-label {
@@ -254,13 +255,19 @@
       color: var(--text-faint);
     }
 
+    /* ===== Expandable card section ===== */
+    .item-expandable { display: none; }
+    .item-expandable.open { display: block; }
+    .item-expandable .dot-grid-wrap {
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+    }
+
     /* ===== History list ===== */
     .history-area {
-      display: none;
       border-top: 1px solid var(--border);
       padding: 12px 16px 4px 60px;
     }
-    .history-area.open { display: block; }
     .history-title {
       font-size: 10px;
       font-weight: 600;
@@ -308,53 +315,44 @@
       padding: 4px 0 10px;
     }
 
-    /* ===== Add button ===== */
-    .add-wrap {
-      position: fixed;
-      bottom: 32px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-    }
+    /* ===== Add button (inline) ===== */
     .add-btn {
-      display: flex; align-items: center; gap: 8px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%;
+      margin: 6px 0 16px;
+      padding: 14px;
       background: var(--sage);
       color: #fff;
       font-size: 15px; font-weight: 600;
       border: none;
-      border-radius: 999px;
-      padding: 13px 24px;
+      border-radius: 16px;
       cursor: pointer;
-      box-shadow: 0 4px 20px rgba(100,125,90,0.35);
+      box-shadow: 0 4px 20px rgba(100,125,90,0.28);
       transition: transform 0.15s, box-shadow 0.15s;
-    }
-    .add-btn:active {
-      transform: scale(0.95);
-      box-shadow: 0 2px 10px rgba(100,125,90,0.25);
-    }
-    .add-btn .plus { font-size: 18px; font-weight: 400; line-height: 1; }
-
-    /* ===== Tool row ===== */
-    .tool-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 20px;
       animation: fadeUp 0.4s ease-out 0.05s both;
     }
-    .tool-btn {
-      flex: 1;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      padding: 10px 12px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      font-size: 12px;
-      color: var(--text-sub);
-      cursor: pointer;
-      transition: background 0.15s;
-      box-shadow: var(--shadow);
+    .add-btn:active { transform: scale(0.98); box-shadow: 0 2px 10px rgba(100,125,90,0.18); }
+    .add-btn .plus { font-size: 18px; font-weight: 400; line-height: 1; }
+
+    /* ===== Tool row (text only) ===== */
+    .tool-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 4px 0 36px;
     }
-    .tool-btn:active { background: var(--card-hover); }
+    .tool-btn {
+      background: none;
+      border: none;
+      font-size: 13px;
+      color: var(--text-faint);
+      cursor: pointer;
+      padding: 4px 6px;
+      transition: color 0.15s;
+    }
+    .tool-btn:hover { color: var(--text-sub); }
+    .tool-sep { color: var(--text-faint); font-size: 12px; }
 
     /* ===== Toast ===== */
     .toast {
@@ -477,17 +475,15 @@
 
 <div class="container">
   <div id="itemList"></div>
-  <div class="tool-row">
-    <button class="tool-btn" id="exportBtn">📤 导出</button>
-    <button class="tool-btn" id="importBtn">📥 导入</button>
-  </div>
-  <input type="file" id="importFile" accept=".json">
-</div>
-
-<div class="add-wrap">
   <button class="add-btn" id="addBtn">
     <span class="plus">+</span> 添加记录项
   </button>
+  <div class="tool-row">
+    <button class="tool-btn" id="exportBtn">导出</button>
+    <span class="tool-sep">·</span>
+    <button class="tool-btn" id="importBtn">导入</button>
+  </div>
+  <input type="file" id="importFile" accept=".json">
 </div>
 
 <div class="toast" id="toast"></div>
@@ -671,10 +667,9 @@ function render(flashId) {
         </div>
         <button class="log-btn" data-id="${item.id}" title="记录一次">＋</button>
       </div>
-      ${buildDotGrid(entries)}
       <div class="item-expand-row">
         <button class="expand-btn" data-id="${item.id}">
-          历史记录
+          展开
           <span class="expand-chevron ${isExpanded ? 'open' : ''}">▾</span>
         </button>
         <div class="item-actions">
@@ -682,11 +677,14 @@ function render(flashId) {
           <button class="action-btn del btn del" data-id="${item.id}">删除</button>
         </div>
       </div>
-      <div class="history-area ${isExpanded ? 'open' : ''}">
-        <div class="history-title">历史记录</div>
-        <div class="history-list">
-          ${entries.length ? historyRows : '<div class="history-empty">暂无记录</div>'}
+      <div class="item-expandable ${isExpanded ? 'open' : ''}">
+        <div class="history-area">
+          <div class="history-title">历史记录</div>
+          <div class="history-list">
+            ${entries.length ? historyRows : '<div class="history-empty">暂无记录</div>'}
+          </div>
         </div>
+        ${buildDotGrid(entries)}
       </div>
     </div>`;
   }).join('');
