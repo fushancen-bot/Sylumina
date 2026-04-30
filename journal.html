@@ -209,7 +209,8 @@
       color: var(--text-primary);
       background: transparent;
       border: none; outline: none;
-      resize: vertical;
+      resize: none;
+      overflow: hidden;
       line-height: 1.85;
     }
     .toolbar {
@@ -1178,10 +1179,16 @@ moodBtns.forEach(btn => {
   });
 });
 
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
 const textEl = document.getElementById('text');
 const saveBtnEl = document.getElementById('saveBtn');
 textEl.addEventListener('input', () => {
   saveBtnEl.classList.toggle('ready', textEl.value.trim().length > 0);
+  autoGrow(textEl);
 });
 saveBtnEl.addEventListener('click', () => {
   const content = textEl.value.trim();
@@ -1191,6 +1198,7 @@ saveBtnEl.addEventListener('click', () => {
   saveEntries(entries);
   showToast(selectedMood || '✨');
   textEl.value = '';
+  autoGrow(textEl);
   selectedMood = null;
   moodBtns.forEach(b => b.classList.remove('sel'));
   saveBtnEl.classList.remove('ready');
@@ -1357,6 +1365,7 @@ const dailyText = document.getElementById('dailyText');
 const dailySaveBtn = document.getElementById('dailySaveBtn');
 dailyText.addEventListener('input', () => {
   dailySaveBtn.classList.toggle('ready', dailyText.value.trim().length > 0);
+  autoGrow(dailyText);
 });
 dailySaveBtn.addEventListener('click', () => {
   const content = dailyText.value.trim();
@@ -1375,6 +1384,7 @@ dailySaveBtn.addEventListener('click', () => {
   saveDailyLogs(logs);
   showToast('✓');
   dailyText.value = '';
+  autoGrow(dailyText);
   dailySaveBtn.classList.remove('ready');
   renderDaily();
 });
