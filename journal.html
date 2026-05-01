@@ -1180,8 +1180,10 @@ moodBtns.forEach(btn => {
 });
 
 function autoGrow(el) {
+  const y = window.scrollY;
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
+  window.scrollTo(0, y);
 }
 
 const textEl = document.getElementById('text');
