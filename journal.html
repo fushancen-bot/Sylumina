@@ -1145,6 +1145,8 @@ function bindJournalEvents(el) {
       actions.innerHTML = `<button class="edit-save">保存</button><button class="edit-cancel">取消</button>`;
       textEl.replaceWith(textarea);
       textarea.after(actions);
+      autoGrow(textarea);
+      textarea.addEventListener('input', () => autoGrow(textarea));
       textarea.focus();
       actions.querySelector('.edit-cancel').addEventListener('click', () => renderJournal(true));
       actions.querySelector('.edit-save').addEventListener('click', () => {
