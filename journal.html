@@ -219,24 +219,29 @@
       align-items: center;
       margin-top: 12px;
     }
-    .moods { display: flex; gap: 6px; }
+    .moods { display: flex; gap: 6px; flex-wrap: wrap; }
     .mood-btn {
-      width: 34px; height: 34px;
-      border-radius: 50%;
+      width: auto; min-width: 0; height: auto;
+      border-radius: 999px;
       border: 1px solid rgba(139,115,85,0.1);
-      background: rgba(255,255,255,0.6);
+      background: transparent;
       cursor: pointer;
-      font-size: 16px;
+      font-family: var(--font-current);
+      font-size: 12px;
+      color: var(--text-secondary);
+      padding: 5px 10px;
       display: flex; align-items: center; justify-content: center;
-      transition: all 0.2s;
+      gap: 5px;
+      transition: background .2s, border-color .2s, color .2s;
       touch-action: manipulation;
     }
-    .mood-btn:hover { transform: scale(1.15); background: rgba(139,115,85,0.08); }
+    .mood-btn:hover { background: rgba(139,115,85,0.08); }
     .mood-btn.sel {
-      transform: scale(1.15);
       background: rgba(139,115,85,0.15);
       border-color: rgba(139,115,85,0.3);
+      color: var(--text-primary);
     }
+    .mood-symbol { font-family: var(--font-system); font-size: 13px; line-height: 1; }
     .save-btn {
       font-family: var(--font-current);
       font-size: 12px;
@@ -750,11 +755,9 @@
       <textarea id="text" placeholder="此刻在想什么…"></textarea>
       <div class="toolbar">
         <div class="moods" id="moods">
-          <button class="mood-btn" data-m="☀️">☀️</button>
-          <button class="mood-btn" data-m="🌧️">🌧️</button>
-          <button class="mood-btn" data-m="🌿">🌿</button>
-          <button class="mood-btn" data-m="☁️">☁️</button>
-          <button class="mood-btn" data-m="🌙">🌙</button>
+          <button type="button" class="mood-btn" data-m="↑" aria-label="标记为好"><span class="mood-symbol">↑</span><span>好</span></button>
+          <button type="button" class="mood-btn" data-m="○" aria-label="标记为一般"><span class="mood-symbol">○</span><span>一般</span></button>
+          <button type="button" class="mood-btn" data-m="↓" aria-label="标记为坏"><span class="mood-symbol">↓</span><span>坏</span></button>
         </div>
         <button class="save-btn" id="saveBtn">记下</button>
       </div>
@@ -964,11 +967,14 @@ function entryHTML(entry, i, fi, animate) {
     : '';
   const isToday = dateKey === todayKey();
   const headTime = isToday ? `${date} ${time}` : time;
+  const moodDisplay = entry.mood && entry.mood !== '💭'
+    ? `<span class="e-mood">${entry.mood}</span>`
+    : '';
   const anim = animate ? `style="animation: slideIn 0.4s ease-out ${Math.min(0.08*fi, 0.6)}s both"` : '';
   return `
     <div class="entry ${entry.starred ? 'starred' : ''}" id="entry-${i}" ${anim}>
       <div class="entry-head">
-        <span class="e-mood">${entry.mood || '💭'}</span>
+        ${moodDisplay}
         <span class="e-time" data-i="${i}" title="点击查看编辑时间">${headTime}</span>
         ${editedLabel}
       </div>
@@ -1198,7 +1204,7 @@ saveBtnEl.addEventListener('click', () => {
   const content = textEl.value.trim();
   if (!content) return;
   const entries = getEntries();
-  entries.unshift({ content, mood: selectedMood || '💭', timestamp: Date.now() });
+  entries.unshift({ content, mood: selectedMood || null, timestamp: Date.now() });
   saveEntries(entries);
   showToast(selectedMood || '✨');
   textEl.value = '';

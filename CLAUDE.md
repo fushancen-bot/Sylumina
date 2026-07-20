@@ -3,7 +3,7 @@
 ## What This Is
 A personal static HTML site hosted on GitHub Pages (`fushancen-bot/Sylumina`).
 Single-page app: `journal.html` — a private journal with two modes:
-- **碎碎念** (journal mode): timestamped entries with mood emoji, star, edit, delete
+- **碎碎念** (journal mode): timestamped entries with optional lightweight mood tags, star, edit, delete
 - **一天** (daily log mode): checklist items grouped by date
 
 No frameworks, no build tools, no backend. All data in `localStorage`.
@@ -16,7 +16,7 @@ No frameworks, no build tools, no backend. All data in `localStorage`.
 
 ## Files
 - `journal.html` — main app (all HTML/CSS/JS inline)
-- `sw.js` — service worker (cache version: `sylumina-journal-v3`)
+- `sw.js` — service worker (current cache version is declared in the file)
 - `manifest.json` — PWA manifest (relative paths, `./icon.png`)
 - `icon.png` — home screen icon (proper PNG, not HEIC)
 - `汇文明朝体.otf` — local Chinese font (URL-encoded in sw.js PRECACHE)
