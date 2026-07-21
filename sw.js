@@ -1,4 +1,4 @@
-const CACHE = 'sylumina-journal-v9';
+const CACHE = 'sylumina-journal-v10';
 
 const PRECACHE = [
   './journal.html',
@@ -11,6 +11,16 @@ const PRECACHE = [
   './icon.png',
   './icon%E6%89%93%E5%8D%A1.png',
   './tracker%20icon.png',
+  './assets/tracker-stickers/drink.png',
+  './assets/tracker-stickers/bedding.png',
+  './assets/tracker-stickers/laundry.png',
+  './assets/tracker-stickers/toilet.png',
+  './assets/tracker-stickers/toothbrush.png',
+  './assets/tracker-stickers/skincare.png',
+  './assets/tracker-stickers/shower.png',
+  './assets/tracker-stickers/hairwash.png',
+  './assets/tracker-stickers/sprout.png',
+  './assets/tracker-stickers/watercolor-wash.png',
 ];
 
 // Install: cache static assets (not HTML — HTML is always fetched fresh)
