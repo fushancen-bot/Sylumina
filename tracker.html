@@ -646,6 +646,63 @@
       catch { return { items: [], log: [] }; }
     }
     function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    function normalizedItemName(name) {
+      return String(name || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('zh-CN');
+    }
+    function mergeTrackerData(existingValue, importedValue) {
+      const existing = safeData(existingValue);
+      const imported = safeData(importedValue);
+      const merged = { items: [], log: [] };
+      const itemById = new Map();
+      const itemByName = new Map();
+      const existingIdMap = new Map();
+      const importedIdMap = new Map();
+      const stats = { addedItems: 0, mergedItems: 0, addedLogs: 0, skippedLogs: 0 };
+
+      function acceptItem(rawItem, source, idMap) {
+        if (!rawItem || rawItem.id == null) return;
+        const sourceId = String(rawItem.id);
+        const name = String(rawItem.name || '').trim();
+        const nameKey = normalizedItemName(name);
+        if (!sourceId || !nameKey) return;
+
+        let target = itemById.get(sourceId) || itemByName.get(nameKey);
+        if (!target) {
+          target = { ...rawItem, id: sourceId, name };
+          merged.items.push(target);
+          itemById.set(sourceId, target);
+          itemByName.set(nameKey, target);
+          if (source === 'imported') stats.addedItems += 1;
+        } else {
+          if (!target.sticker && rawItem.sticker) target.sticker = rawItem.sticker;
+          if (source === 'imported' && target.id !== sourceId) stats.mergedItems += 1;
+        }
+        idMap.set(sourceId, target.id);
+      }
+
+      existing.items.forEach(item => acceptItem(item, 'existing', existingIdMap));
+      imported.items.forEach(item => acceptItem(item, 'imported', importedIdMap));
+
+      const seenLogs = new Set();
+      function acceptLog(rawEntry, idMap, source) {
+        if (!rawEntry || rawEntry.itemId == null) return;
+        const targetId = idMap.get(String(rawEntry.itemId));
+        const time = Number(rawEntry.time);
+        if (!targetId || !Number.isFinite(time)) return;
+        const key = `${targetId}\u0000${time}`;
+        if (seenLogs.has(key)) {
+          if (source === 'imported') stats.skippedLogs += 1;
+          return;
+        }
+        seenLogs.add(key);
+        merged.log.push({ ...rawEntry, itemId: targetId, time });
+        if (source === 'imported') stats.addedLogs += 1;
+      }
+
+      existing.log.forEach(entry => acceptLog(entry, existingIdMap, 'existing'));
+      imported.log.forEach(entry => acceptLog(entry, importedIdMap, 'imported'));
+      return { data: merged, stats };
+    }
     function escapeHTML(value) {
       return String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
     }
@@ -801,12 +858,12 @@
       menuId = null;
       render();
     }
-    function showToast(message) {
+    function showToast(message, duration = 1500) {
       const toast = document.getElementById('toast');
       toast.textContent = message;
       toast.classList.add('show');
       window.clearTimeout(showToast.timer);
-      showToast.timer = window.setTimeout(() => toast.classList.remove('show'), 1500);
+      showToast.timer = window.setTimeout(() => toast.classList.remove('show'), duration);
     }
 
     function renderStickerPicker() {
@@ -878,12 +935,17 @@
         try {
           const imported = safeData(JSON.parse(loadEvent.target.result));
           const existing = getData();
-          const ids = new Set(existing.items.map(item => item.id));
-          imported.items.forEach(item => { if (!ids.has(item.id)) existing.items.push(item); });
-          imported.log.forEach(entry => existing.log.push(entry));
-          saveData(existing);
+          const { data, stats } = mergeTrackerData(existing, imported);
+          saveData(data);
           render();
-          showToast('备份已导入');
+          const itemResult = stats.addedItems || stats.mergedItems
+            ? `新增 ${stats.addedItems} 项、合并 ${stats.mergedItems} 项`
+            : '项目无需变动';
+          const logResult = stats.addedLogs
+            ? `加入 ${stats.addedLogs} 条记录`
+            : '没有新记录';
+          const skippedResult = stats.skippedLogs ? `，跳过 ${stats.skippedLogs} 条重复记录` : '';
+          showToast(`${itemResult}；${logResult}${skippedResult}`, 3200);
         } catch { alert('文件格式不对，请选择之前导出的 JSON 备份。'); }
         event.target.value = '';
       };
