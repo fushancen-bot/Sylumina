@@ -512,6 +512,53 @@
     }
     input[type="file"] { display: none; }
 
+    @media (max-width: 719px) {
+      .page-shell { padding: 30px 14px 68px; }
+      .hero { min-height: 168px; padding: 4px 2px 21px; }
+      .hero h1 { font-size: 40px; }
+      .hero-sub { margin-top: 7px; font-size: 15px; }
+      .today-line { margin-top: 23px; min-height: 34px; padding: 5px 11px; font-size: 13px; }
+      .hero-wash { width: 228px; height: 228px; top: -62px; right: -76px; }
+
+      .tracker-grid { gap: 12px; padding-top: 16px; }
+      .item-card { border-radius: 23px 19px 22px 18px; }
+      .card-core {
+        min-height: 252px;
+        padding: 14px 15px 10px;
+        grid-template-columns: minmax(0, 1fr) 84px;
+        grid-template-rows: auto auto auto;
+        column-gap: 8px;
+        row-gap: 2px;
+      }
+      .card-heading { grid-template-columns: 56px minmax(0, 1fr); gap: 9px; }
+      .sticker-wrap { width: 56px; height: 56px; }
+      .sticker { width: 55px; height: 55px; }
+      .item-name { font-size: 22px; }
+      .manage-btn { padding: 5px 2px; font-size: 12px; }
+      .distance-block { padding: 6px 0 4px 5px; }
+      .distance-number { font-size: clamp(66px, 19vw, 82px); }
+      .distance-word { font-size: 27px; }
+      .distance-main.text-only .distance-number { font-size: 36px; }
+      .last-date { margin-top: 10px; font-size: 13px; }
+      .log-btn { width: 80px; height: 80px; font-size: 17px; }
+      .growth {
+        height: 42px;
+        margin-top: 0;
+        grid-template-columns: 34px 1fr 30px;
+      }
+      .sprout { width: 34px; height: 34px; }
+      .growth-track {
+        height: 23px;
+        gap: clamp(2px, 1vw, 5px);
+        padding: 0 3px 3px;
+      }
+      .today-mark { height: 32px; padding-left: 4px; font-size: 11px; }
+      .card-menu { padding: 0 15px 12px; }
+      .history-panel { padding: 15px; }
+      .add-card { min-height: 66px; margin-top: 14px; }
+      .tool-row { margin-top: 15px; }
+    }
+
     @media (min-width: 720px) {
       .page-shell { padding: 56px 28px 100px; }
       .hero { min-height: 214px; padding-left: 8px; }
