@@ -277,13 +277,24 @@
       background-size: contain;
       opacity: .5;
       transition: opacity .2s;
+      z-index: 1;
+    }
+    .date-sep + .entry:has(+ .entry)::after,
+    .entry + .entry::after {
+      content: '';
+      position: absolute;
+      left: 16.5px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgba(177,90,61,0.12);
+      z-index: 0;
+    }
+    .date-sep + .entry:has(+ .entry)::after {
+      top: 10px;
     }
     .entry:has(+ .entry)::after {
-      content: '';
-      position: absolute; left: 1px; top: 4px; bottom: -20px;
-      width: 2px;
-      border-radius: 999px;
-      background: rgba(177,90,61,0.08);
+      bottom: -24px;
     }
     .entry-head {
       display: flex;
