@@ -1445,7 +1445,9 @@ document.getElementById('importFile').addEventListener('change', (e) => {
 
 // ===== Service Worker =====
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
+  navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+    .then(registration => registration.update())
+    .catch(() => {});
 }
 </script>
 
