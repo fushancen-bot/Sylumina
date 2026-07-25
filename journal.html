@@ -17,7 +17,7 @@
   <style>
     @font-face {
       font-family: 'Huiwen Mincho';
-      src: url('./汇文明朝体.otf') format('opentype');
+      src: url('./汇文明朝体.woff2') format('woff2');
       font-weight: normal;
       font-style: normal;
       font-display: swap;
@@ -798,7 +798,7 @@ footerDaily.addEventListener('click', () => switchMode('daily'));
 const FONTS = [
   { key: 'serif',  label: '宋体', family: "'Noto Serif SC', 'Songti SC', serif" },
   { key: 'system', label: '系统', family: "-apple-system, 'Helvetica Neue', 'PingFang SC', sans-serif" },
-  { key: 'mincho', label: '明朝', family: "'Huiwen Mincho', 'Noto Serif SC', serif" },
+  { key: 'mincho', label: '明朝体', family: "'Huiwen Mincho', 'Noto Serif SC', serif" },
 ];
 let fontIdx = parseInt(localStorage.getItem('xshan_font2') || '0');
 
