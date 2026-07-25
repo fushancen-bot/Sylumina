@@ -279,8 +279,8 @@
       transition: opacity .2s;
       z-index: 1;
     }
-    .date-sep + .entry:has(+ .entry)::after,
-    .entry + .entry::after {
+    .entry.same-day-prev::after,
+    .entry.same-day-next::after {
       content: '';
       position: absolute;
       left: 16.5px;
@@ -290,11 +290,11 @@
       background: rgba(177,90,61,0.12);
       z-index: 0;
     }
-    .date-sep + .entry:has(+ .entry)::after {
-      top: 10px;
-    }
-    .entry:has(+ .entry)::after {
+    .entry.same-day-next::after {
       bottom: -24px;
+    }
+    .entry.same-day-next:not(.same-day-prev)::after {
+      top: 10px;
     }
     .entry-head {
       display: flex;
@@ -939,9 +939,9 @@ function entryHTML(entry, i, fi, animate) {
     </div>`;
 }
 
-function entriesSlice(items, startFi, animate = true) {
+function entriesSlice(items, startFi, animate = true, initialDateKey = '') {
   let html = '';
-  let lastDK = '';
+  let lastDK = initialDateKey;
   items.forEach(({ entry, i }, idx) => {
     const { date, dateKey } = fmtDate(entry.timestamp);
     if (dateKey !== lastDK) {
@@ -1039,7 +1039,9 @@ function appendJournalEntries() {
 
   const startIdx = journalVisible - 30;
   const tmp = document.createElement('div');
-  tmp.innerHTML = entriesSlice(monthEntries.slice(startIdx, journalVisible), 0, false);
+  const previousItem = monthEntries[startIdx - 1];
+  const previousDateKey = previousItem ? fmtDate(previousItem.entry.timestamp).dateKey : '';
+  tmp.innerHTML = entriesSlice(monthEntries.slice(startIdx, journalVisible), 0, false, previousDateKey);
   while (tmp.firstChild) el.appendChild(tmp.firstChild);
 
   bindJournalEvents(el);
@@ -1065,7 +1067,26 @@ function observeJournalSentinel() {
   }, { rootMargin: '120px' }).observe(sentinel);
 }
 
+function syncTimelineContinuity(el) {
+  const allEntries = getEntries();
+  const visibleEntries = Array.from(el.querySelectorAll('.entry'));
+  const dateKeyFor = (node) => {
+    const index = Number(node.id.replace('entry-', ''));
+    const entry = allEntries[index];
+    return entry ? fmtDate(entry.timestamp).dateKey : '';
+  };
+
+  visibleEntries.forEach((node, index) => {
+    const dateKey = dateKeyFor(node);
+    const previousDateKey = index > 0 ? dateKeyFor(visibleEntries[index - 1]) : '';
+    const nextDateKey = index < visibleEntries.length - 1 ? dateKeyFor(visibleEntries[index + 1]) : '';
+    node.classList.toggle('same-day-prev', Boolean(dateKey && dateKey === previousDateKey));
+    node.classList.toggle('same-day-next', Boolean(dateKey && dateKey === nextDateKey));
+  });
+}
+
 function bindJournalEvents(el) {
+  syncTimelineContinuity(el);
   // Star
   el.querySelectorAll('.star-btn').forEach(btn => {
     btn.onclick = () => {
