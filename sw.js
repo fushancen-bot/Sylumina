@@ -1,4 +1,4 @@
-const CACHE = 'sylumina-journal-v21';
+const CACHE = 'sylumina-journal-v22';
 
 const PRECACHE = [
   './journal.html',
