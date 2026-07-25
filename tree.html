@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>小树的碎碎念</title>
   <link rel="manifest" href="./manifest-tree.json">
-  <link rel="icon" href="./icon.png" type="image/png">
-  <link rel="apple-touch-icon" href="./icon.png">
+  <link rel="icon" href="./icon-tree-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="./icon-tree-512.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="小树碎碎念">
@@ -929,8 +929,8 @@ function entryHTML(entry, i, fi, animate) {
     <div class="entry ${entry.starred ? 'starred' : ''}" id="entry-${i}" ${anim}>
       <div class="entry-head">
         <span class="e-time" data-i="${i}" title="点击查看编辑时间">${headTime}</span>
-        ${moodDisplay}
         ${editedLabel}
+        ${moodDisplay}
       </div>
       <p id="text-${i}">${escaped}</p>
       <button class="star-btn" data-i="${i}">${entry.starred ? '★' : '☆'}</button>
@@ -1140,10 +1140,11 @@ function bindJournalEvents(el) {
       });
     };
   });
-  // Edited time toggle
-  el.querySelectorAll('.e-time').forEach(span => {
-    span.onclick = () => {
-      const i = parseInt(span.dataset.i);
+  // Edited time toggle: tap anywhere on the entry, except its controls.
+  el.querySelectorAll('.entry').forEach(entryEl => {
+    entryEl.onclick = (event) => {
+      if (event.target.closest('button, textarea, .edit-actions')) return;
+      const i = parseInt(entryEl.id.replace('entry-', ''));
       const editedEl = document.getElementById(`edited-${i}`);
       if (!editedEl) return;
       editedEl.style.display = editedEl.style.display !== 'none' ? 'none' : 'inline';

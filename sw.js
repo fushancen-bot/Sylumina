@@ -1,4 +1,4 @@
-const CACHE = 'sylumina-journal-v20';
+const CACHE = 'sylumina-journal-v21';
 
 const PRECACHE = [
   './journal.html',
@@ -11,6 +11,9 @@ const PRECACHE = [
   './manifest-habits.json',
   './manifest-tracker.json',
   './icon.png',
+  './icon-tree-192.png',
+  './icon-tree-512.png',
+  './icon-tree-maskable-512.png',
   './icon%E6%89%93%E5%8D%A1.png',
   './tracker%20icon.png',
   './assets/tracker-stickers/drink.png',
