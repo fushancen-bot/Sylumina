@@ -364,6 +364,7 @@
       resize: none;
       line-height: 1.9;
     }
+    .edit-moods { margin-top: 10px; }
     .edit-actions { display: flex; gap: 8px; margin-top: 8px; }
     .edit-save, .edit-cancel {
       font-family: var(--font-current);
@@ -1121,19 +1122,41 @@ function bindJournalEvents(el) {
       textarea.className = 'entry-edit-area';
       textarea.value = entry.content;
       textarea.rows = Math.max(3, entry.content.split('\n').length);
+      let editedMood = entry.mood === '💭' ? null : (entry.mood || null);
+      const editMoods = document.createElement('div');
+      editMoods.className = 'moods edit-moods';
+      editMoods.innerHTML = `
+        <button type="button" class="mood-btn ${editedMood === '↑' ? 'sel' : ''}" data-m="↑" aria-label="标记为好"><span class="mood-symbol">↑</span><span>好</span></button>
+        <button type="button" class="mood-btn ${editedMood === '○' ? 'sel' : ''}" data-m="○" aria-label="标记为一般"><span class="mood-symbol">○</span><span>一般</span></button>
+        <button type="button" class="mood-btn ${editedMood === '↓' ? 'sel' : ''}" data-m="↓" aria-label="标记为坏"><span class="mood-symbol">↓</span><span>坏</span></button>
+      `;
       const actions = document.createElement('div');
       actions.className = 'edit-actions';
       actions.innerHTML = `<button class="edit-save">保存</button><button class="edit-cancel">取消</button>`;
       textEl.replaceWith(textarea);
-      textarea.after(actions);
+      textarea.after(editMoods, actions);
       autoGrow(textarea);
       textarea.addEventListener('input', () => autoGrow(textarea));
+      const editMoodBtns = editMoods.querySelectorAll('.mood-btn');
+      editMoodBtns.forEach(moodBtn => {
+        moodBtn.addEventListener('click', () => {
+          const mood = moodBtn.dataset.m;
+          editMoodBtns.forEach(b => b.classList.remove('sel'));
+          if (editedMood === mood) {
+            editedMood = null;
+          } else {
+            editedMood = mood;
+            moodBtn.classList.add('sel');
+          }
+        });
+      });
       textarea.focus();
       actions.querySelector('.edit-cancel').addEventListener('click', () => renderJournal(true));
       actions.querySelector('.edit-save').addEventListener('click', () => {
         const newContent = textarea.value.trim();
         if (!newContent) return;
         entries[i].content = newContent;
+        entries[i].mood = editedMood;
         entries[i].editedAt = Date.now();
         saveEntries(entries);
         renderJournal(true);
