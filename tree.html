@@ -583,20 +583,40 @@
     }
     .filter-toggle {
       background: none; border: none;
-      font-size: 16px;
+      width: 30px;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
       color: rgba(139,115,85,0.3);
       cursor: pointer;
-      padding: 4px 6px;
+      padding: 0;
       border-radius: 8px;
       transition: all 0.2s;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
       line-height: 1;
     }
+    .filter-toggle svg {
+      width: 19px;
+      height: 19px;
+      display: block;
+    }
+    #starFilter { padding-bottom: 1px; }
     .filter-toggle:hover { color: rgba(139,115,85,0.65); }
     .filter-toggle.active { color: var(--accent); background: var(--accent-soft); }
     .search-wrap { display: none; align-items: center; position: relative; }
     .search-wrap.show { display: flex; }
+    .search-wrap > svg {
+      position: absolute;
+      left: 13px;
+      width: 15px;
+      height: 15px;
+      color: rgba(139,115,85,0.36);
+      pointer-events: none;
+      z-index: 1;
+    }
     #searchInput {
       width: 100%;
       font-family: var(--font-current);
@@ -605,8 +625,8 @@
       color: var(--text-primary);
       background: var(--card-bg);
       border: 1px solid rgba(139,115,85,0.12);
-      border-radius: 12px;
-      padding: 10px 40px 10px 16px;
+      border-radius: 999px;
+      padding: 10px 40px 10px 38px;
       outline: none;
       transition: border-color 0.2s;
     }
@@ -720,11 +740,12 @@
 
     <div class="filter-bar" id="filterBar">
       <div class="search-wrap" id="searchWrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
         <input type="text" id="searchInput" placeholder="搜索碎碎念…" autocomplete="off">
         <button class="search-clear" id="searchClear">✕</button>
       </div>
       <div class="filter-btns">
-        <button class="filter-toggle" id="searchToggle" title="搜索">⌕</button>
+        <button class="filter-toggle" id="searchToggle" title="搜索" aria-label="搜索"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg></button>
         <button class="filter-toggle" id="starFilter" title="只看星标">☆</button>
       </div>
     </div>
