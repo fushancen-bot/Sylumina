@@ -712,6 +712,14 @@
       }
     }
 
+    /* Give iPad-sized touch screens a more comfortable reading scale. */
+    @media (min-width: 768px) and (max-width: 1366px) and (pointer: coarse) {
+      .entry p { font-size: 17.5px; }
+      textarea,
+      .entry-edit-area { font-size: 17px; }
+      html[data-font="system"] .entry p { font-size: 16.5px; }
+    }
+
     /* ===== Footer ===== */
     footer {
       padding: 48px 0 36px;
