@@ -385,7 +385,8 @@
       color: var(--text-body);
       line-height: 1.9;
       white-space: pre-wrap;
-      text-align: justify;
+      text-align: left;
+      line-break: anywhere;
     }
     .entry .del, .entry .edit-btn {
       position: absolute;
@@ -699,7 +700,7 @@
     /* ===== Font specific ===== */
     html[data-font="serif"] .entry p,
     html[data-font="serif"] .entry-edit-area { color: rgba(42,37,32,0.93); font-weight: 400; }
-    html[data-font="system"] .entry p { font-size: 14.5px; color: rgba(42,37,32,0.95); font-weight: 400; text-align: left; }
+    html[data-font="system"] .entry p { font-size: 14.5px; color: rgba(42,37,32,0.95); font-weight: 400; }
     html[data-font="system"] .entry-edit-area,
     html[data-font="system"] textarea { color: rgba(42,37,32,0.95); font-weight: 400; }
 
