@@ -1544,10 +1544,14 @@ function renderJournal(keepScroll) {
   tabsEl.innerHTML = months.map(mk =>
     `<button class="month-tab${mk === selectedMonth ? ' selected' : ''}" data-mk="${mk}">${monthLabel(mk)}</button>`
   ).join('');
-  setTimeout(() => {
-    const sel = tabsEl.querySelector('.month-tab.selected');
-    if (sel) sel.scrollIntoView({ inline: 'nearest', behavior: 'smooth', block: 'nearest' });
-  }, 60);
+  // Fresh month renders may bring the selected tab into view. During an
+  // in-place update (star/edit/delete), doing this can move the whole page.
+  if (!keepScroll) {
+    setTimeout(() => {
+      const sel = tabsEl.querySelector('.month-tab.selected');
+      if (sel) sel.scrollIntoView({ inline: 'nearest', behavior: 'smooth', block: 'nearest' });
+    }, 60);
+  }
   tabsEl.querySelectorAll('.month-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       selectedMonth = tab.dataset.mk;
@@ -1572,6 +1576,7 @@ function renderJournal(keepScroll) {
   el.innerHTML = html;
   bindJournalEvents(el);
   observeJournalSentinel();
+  if (keepScroll) window.scrollTo(0, scrollY);
 }
 
 function appendJournalEntries() {
@@ -1663,6 +1668,7 @@ function bindJournalEvents(el) {
       const entries = getEntries();
       const entry = entries[i];
       if (entryEl.classList.contains('editing')) return;
+      const editStartScrollY = window.scrollY;
       entryEl.classList.add('editing');
       const textarea = document.createElement('textarea');
       textarea.className = 'entry-edit-area';
@@ -1697,7 +1703,12 @@ function bindJournalEvents(el) {
         });
       });
       textarea.focus();
-      actions.querySelector('.edit-cancel').addEventListener('click', () => renderJournal(true));
+      const finishEditing = () => {
+        textarea.blur();
+        renderJournal(true);
+        restoreScrollAfterEdit(editStartScrollY);
+      };
+      actions.querySelector('.edit-cancel').addEventListener('click', finishEditing);
       actions.querySelector('.edit-save').addEventListener('click', () => {
         const newContent = textarea.value.trim();
         if (!newContent) return;
@@ -1705,7 +1716,7 @@ function bindJournalEvents(el) {
         entries[i].mood = editedMood;
         entries[i].editedAt = Date.now();
         saveEntries(entries);
-        renderJournal(true);
+        finishEditing();
       });
     };
   });
@@ -1737,6 +1748,45 @@ function autoGrow(el) {
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
   window.scrollTo(0, y);
+}
+
+// iOS changes the visual viewport while the keyboard closes. Restore the
+// position from before editing once immediately, and once more after that
+// viewport has settled, so Save and Cancel return to the same entry.
+function restoreScrollAfterEdit(scrollY) {
+  const restore = () => window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' });
+  const viewport = window.visualViewport;
+  const timers = [];
+  let stopped = false;
+  const cleanup = () => {
+    if (stopped) return;
+    stopped = true;
+    timers.forEach(clearTimeout);
+    viewport?.removeEventListener('resize', onResize);
+    document.removeEventListener('pointerdown', cleanup, true);
+    document.removeEventListener('touchstart', cleanup, true);
+    document.removeEventListener('wheel', cleanup, true);
+    document.removeEventListener('keydown', cleanup, true);
+  };
+  const onResize = () => {
+    if (!stopped) requestAnimationFrame(restore);
+  };
+
+  // Keyboard and focus settling can produce more than one late scroll on iOS.
+  // A few short-lived restores keep the original reading position stable.
+  [0, 80, 220, 450, 800].forEach((delay, index, delays) => {
+    timers.push(setTimeout(() => {
+      if (stopped) return;
+      restore();
+      if (index === delays.length - 1) cleanup();
+    }, delay));
+  });
+
+  viewport?.addEventListener('resize', onResize);
+  document.addEventListener('pointerdown', cleanup, true);
+  document.addEventListener('touchstart', cleanup, { capture: true, passive: true });
+  document.addEventListener('wheel', cleanup, { capture: true, passive: true });
+  document.addEventListener('keydown', cleanup, true);
 }
 
 const textEl = document.getElementById('text');
