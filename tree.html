@@ -47,6 +47,7 @@
       --accent: #B15A3D;
       --accent-soft: rgba(177,90,61,0.14);
       --accent-mid: rgba(177,90,61,0.4);
+      --accent-line: rgba(177,90,61,0.12);
     }
 
     body {
@@ -187,6 +188,58 @@
     }
     .font-option.active { background: rgba(139,115,85,0.1); color: rgba(90,74,56,0.85); }
     .font-option:hover:not(.active) { background: rgba(139,115,85,0.05); }
+    .theme-picker-wrap { position: relative; }
+    .theme-picker-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(139,115,85,0.15);
+      background: transparent;
+      cursor: pointer;
+      color: var(--accent);
+      font-size: 13px;
+      line-height: 1;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+      z-index: 10;
+    }
+    .theme-picker-btn.open { background: var(--accent-soft); }
+    .theme-dropdown {
+      display: none;
+      position: absolute; top: 50%; right: 44px;
+      transform: translateY(-50%);
+      background: rgba(246,242,236,0.97);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(139,115,85,0.12);
+      border-radius: 12px;
+      padding: 7px 8px;
+      box-shadow: 0 4px 20px rgba(42,37,32,0.1);
+      z-index: 1000;
+      gap: 7px;
+      white-space: nowrap;
+      animation: fadeSide 0.2s ease-out both;
+    }
+    .theme-dropdown.show { display: flex; }
+    .theme-option {
+      width: 22px; height: 22px;
+      padding: 0;
+      border: 2px solid transparent;
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .theme-option::after {
+      content: '';
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--swatch);
+    }
+    .theme-option.active { border-color: var(--swatch); }
 
     /* ===== Input Card ===== */
     .input-card {
@@ -698,9 +751,66 @@
     }
     .data-btn:hover { color: rgba(90,74,56,0.6); border-color: rgba(139,115,85,0.3); }
 
+    /* ===== Scroll shortcuts ===== */
+    .scroll-jump {
+      position: fixed;
+      right: max(8px, calc((100vw - 600px) / 2 - 52px));
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      z-index: 150;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .scroll-jump-btn {
+      width: 38px;
+      height: 38px;
+      border: 1px solid var(--accent-line);
+      border-radius: 50%;
+      background: rgba(246,242,236,0.84);
+      color: var(--accent);
+      box-shadow: 0 4px 16px rgba(42,37,32,0.08);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0.82;
+      transform: translateY(0);
+      transition: opacity 0.22s ease, transform 0.22s ease, background 0.22s ease;
+      pointer-events: auto;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .scroll-jump-btn:active {
+      background: var(--accent-soft);
+      opacity: 1;
+      transform: scale(0.94);
+    }
+    .scroll-jump-btn.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #scrollTopBtn.hidden { transform: translateY(6px); }
+    #scrollBottomBtn.hidden { transform: translateY(-6px); }
+    .scroll-jump-btn svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     /* ===== View toggle ===== */
     .view-section { display: none; }
     .view-section.active { display: block; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .scroll-jump-btn { transition: none; }
+    }
 
     @media (max-width: 480px) {
       header { padding-top: 36px; }
@@ -711,6 +821,19 @@
 </head>
 <body>
 
+<nav class="scroll-jump" aria-label="页面快速滚动">
+  <button class="scroll-jump-btn hidden" id="scrollTopBtn" type="button" aria-label="回到顶部" title="回到顶部">
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M3.5 10.5 8 6l4.5 4.5"></path>
+    </svg>
+  </button>
+  <button class="scroll-jump-btn hidden" id="scrollBottomBtn" type="button" aria-label="回到底部" title="回到底部">
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M3.5 5.5 8 10l4.5-4.5"></path>
+    </svg>
+  </button>
+</nav>
+
 <div class="container">
   <header>
     <h1 id="titleToggle">
@@ -720,6 +843,10 @@
       <div class="font-picker-wrap">
         <button class="font-picker-btn" id="fontBtn">A</button>
         <div class="font-dropdown" id="fontDropdown"></div>
+      </div>
+      <div class="theme-picker-wrap">
+        <button class="theme-picker-btn" id="themeBtn" aria-label="切换主题颜色">●</button>
+        <div class="theme-dropdown" id="themeDropdown"></div>
       </div>
     </div>
   </header>
@@ -826,6 +953,34 @@ let fontIdx = parseInt(localStorage.getItem('xtree_font2') || '0');
 
 const fontBtn = document.getElementById('fontBtn');
 const fontDropdown = document.getElementById('fontDropdown');
+const themeBtn = document.getElementById('themeBtn');
+const themeDropdown = document.getElementById('themeDropdown');
+
+const THEMES = {
+  red: {
+    label: '酒红',
+    accent: '#B15A3D',
+    soft: 'rgba(177,90,61,0.14)',
+    mid: 'rgba(177,90,61,0.4)',
+    line: 'rgba(177,90,61,0.12)',
+  },
+  green: {
+    label: '叶绿',
+    accent: '#718D75',
+    soft: 'rgba(113,141,117,0.14)',
+    mid: 'rgba(113,141,117,0.4)',
+    line: 'rgba(113,141,117,0.12)',
+  },
+  pink: {
+    label: '莓粉',
+    accent: '#CF7580',
+    soft: 'rgba(207,117,128,0.14)',
+    mid: 'rgba(207,117,128,0.4)',
+    line: 'rgba(207,117,128,0.12)',
+  },
+};
+let themeKey = localStorage.getItem('xtree_theme') || 'red';
+if (!THEMES[themeKey]) themeKey = 'red';
 
 function renderFontPicker() {
   fontDropdown.innerHTML = FONTS.map((f, i) =>
@@ -840,8 +995,28 @@ function applyFont() {
   renderFontPicker();
 }
 
+function renderThemePicker() {
+  themeDropdown.innerHTML = Object.entries(THEMES).map(([key, theme]) =>
+    `<button class="theme-option ${key === themeKey ? 'active' : ''}" data-theme="${key}" style="--swatch:${theme.accent}" aria-label="${theme.label}" title="${theme.label}"></button>`
+  ).join('');
+}
+
+function applyTheme() {
+  const theme = THEMES[themeKey];
+  const root = document.documentElement;
+  root.style.setProperty('--accent', theme.accent);
+  root.style.setProperty('--accent-soft', theme.soft);
+  root.style.setProperty('--accent-mid', theme.mid);
+  root.style.setProperty('--accent-line', theme.line);
+  root.setAttribute('data-theme', themeKey);
+  localStorage.setItem('xtree_theme', themeKey);
+  renderThemePicker();
+}
+
 fontBtn.addEventListener('click', (e) => {
   e.stopPropagation();
+  themeDropdown.classList.remove('show');
+  themeBtn.classList.remove('open');
   fontDropdown.classList.toggle('show');
   fontBtn.classList.toggle('open');
 });
@@ -854,11 +1029,30 @@ fontDropdown.addEventListener('click', (e) => {
   fontDropdown.classList.remove('show');
   fontBtn.classList.remove('open');
 });
+themeBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  fontDropdown.classList.remove('show');
+  fontBtn.classList.remove('open');
+  themeDropdown.classList.toggle('show');
+  themeBtn.classList.toggle('open');
+});
+themeDropdown.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const btn = e.target.closest('.theme-option');
+  if (!btn) return;
+  themeKey = btn.dataset.theme;
+  applyTheme();
+  themeDropdown.classList.remove('show');
+  themeBtn.classList.remove('open');
+});
 document.addEventListener('click', () => {
   fontDropdown.classList.remove('show');
   fontBtn.classList.remove('open');
+  themeDropdown.classList.remove('show');
+  themeBtn.classList.remove('open');
 });
 applyFont();
+applyTheme();
 
 // ===== Toast Helper =====
 const toast = document.getElementById('toast');
@@ -1019,10 +1213,14 @@ function renderJournal(keepScroll) {
   tabsEl.innerHTML = months.map(mk =>
     `<button class="month-tab${mk === selectedMonth ? ' selected' : ''}" data-mk="${mk}">${monthLabel(mk)}</button>`
   ).join('');
-  setTimeout(() => {
-    const sel = tabsEl.querySelector('.month-tab.selected');
-    if (sel) sel.scrollIntoView({ inline: 'nearest', behavior: 'smooth', block: 'nearest' });
-  }, 60);
+  // Fresh month renders may bring the selected tab into view. During an
+  // in-place update (star/edit/delete), doing this can move the whole page.
+  if (!keepScroll) {
+    setTimeout(() => {
+      const sel = tabsEl.querySelector('.month-tab.selected');
+      if (sel) sel.scrollIntoView({ inline: 'nearest', behavior: 'smooth', block: 'nearest' });
+    }, 60);
+  }
   tabsEl.querySelectorAll('.month-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       selectedMonth = tab.dataset.mk;
@@ -1047,6 +1245,7 @@ function renderJournal(keepScroll) {
   el.innerHTML = html;
   bindJournalEvents(el);
   observeJournalSentinel();
+  if (keepScroll) window.scrollTo(0, scrollY);
 }
 
 function appendJournalEntries() {
@@ -1138,6 +1337,7 @@ function bindJournalEvents(el) {
       const entries = getEntries();
       const entry = entries[i];
       if (entryEl.classList.contains('editing')) return;
+      const editStartScrollY = window.scrollY;
       entryEl.classList.add('editing');
       const textarea = document.createElement('textarea');
       textarea.className = 'entry-edit-area';
@@ -1172,7 +1372,12 @@ function bindJournalEvents(el) {
         });
       });
       textarea.focus();
-      actions.querySelector('.edit-cancel').addEventListener('click', () => renderJournal(true));
+      const finishEditing = () => {
+        textarea.blur();
+        renderJournal(true);
+        restoreScrollAfterEdit(editStartScrollY);
+      };
+      actions.querySelector('.edit-cancel').addEventListener('click', finishEditing);
       actions.querySelector('.edit-save').addEventListener('click', () => {
         const newContent = textarea.value.trim();
         if (!newContent) return;
@@ -1180,7 +1385,7 @@ function bindJournalEvents(el) {
         entries[i].mood = editedMood;
         entries[i].editedAt = Date.now();
         saveEntries(entries);
-        renderJournal(true);
+        finishEditing();
       });
     };
   });
@@ -1212,6 +1417,45 @@ function autoGrow(el) {
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
   window.scrollTo(0, y);
+}
+
+// iOS changes the visual viewport while the keyboard closes. Restore the
+// position from before editing once immediately, and once more after that
+// viewport has settled, so Save and Cancel return to the same entry.
+function restoreScrollAfterEdit(scrollY) {
+  const restore = () => window.scrollTo({ top: scrollY, left: 0, behavior: 'auto' });
+  const viewport = window.visualViewport;
+  const timers = [];
+  let stopped = false;
+  const cleanup = () => {
+    if (stopped) return;
+    stopped = true;
+    timers.forEach(clearTimeout);
+    viewport?.removeEventListener('resize', onResize);
+    document.removeEventListener('pointerdown', cleanup, true);
+    document.removeEventListener('touchstart', cleanup, true);
+    document.removeEventListener('wheel', cleanup, true);
+    document.removeEventListener('keydown', cleanup, true);
+  };
+  const onResize = () => {
+    if (!stopped) requestAnimationFrame(restore);
+  };
+
+  // Keyboard and focus settling can produce more than one late scroll on iOS.
+  // A few short-lived restores keep the original reading position stable.
+  [0, 80, 220, 450, 800].forEach((delay, index, delays) => {
+    timers.push(setTimeout(() => {
+      if (stopped) return;
+      restore();
+      if (index === delays.length - 1) cleanup();
+    }, delay));
+  });
+
+  viewport?.addEventListener('resize', onResize);
+  document.addEventListener('pointerdown', cleanup, true);
+  document.addEventListener('touchstart', cleanup, { capture: true, passive: true });
+  document.addEventListener('wheel', cleanup, { capture: true, passive: true });
+  document.addEventListener('keydown', cleanup, true);
 }
 
 const textEl = document.getElementById('text');
@@ -1508,6 +1752,45 @@ document.getElementById('importFile').addEventListener('change', (e) => {
   };
   reader.readAsText(file);
 });
+
+// ===== Scroll shortcuts =====
+const scrollTopBtn = document.getElementById('scrollTopBtn');
+const scrollBottomBtn = document.getElementById('scrollBottomBtn');
+const reduceScrollMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function maxPageScroll() {
+  return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+}
+
+function updateScrollJumpButtons() {
+  const maxScroll = maxPageScroll();
+  const currentScroll = Math.min(window.scrollY, maxScroll);
+  const hasUsefulScroll = maxScroll > 180;
+
+  scrollTopBtn.classList.toggle('hidden', !hasUsefulScroll || currentScroll < 140);
+  scrollBottomBtn.classList.toggle('hidden', !hasUsefulScroll || maxScroll - currentScroll < 140);
+}
+
+let scrollJumpFrame = null;
+function requestScrollJumpUpdate() {
+  if (scrollJumpFrame !== null) return;
+  scrollJumpFrame = requestAnimationFrame(() => {
+    scrollJumpFrame = null;
+    updateScrollJumpButtons();
+  });
+}
+
+scrollTopBtn.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: reduceScrollMotion.matches ? 'auto' : 'smooth' });
+});
+scrollBottomBtn.addEventListener('click', () => {
+  window.scrollTo({ top: document.documentElement.scrollHeight, behavior: reduceScrollMotion.matches ? 'auto' : 'smooth' });
+});
+
+window.addEventListener('scroll', requestScrollJumpUpdate, { passive: true });
+window.addEventListener('resize', requestScrollJumpUpdate);
+new MutationObserver(requestScrollJumpUpdate).observe(document.body, { childList: true, subtree: true });
+requestScrollJumpUpdate();
 
 // ===== Service Worker =====
 if ('serviceWorker' in navigator) {
