@@ -697,6 +697,180 @@
       line-height: 1;
     }
 
+    /* ===== Old thoughts revisit ===== */
+    .memory-entrance {
+      width: 100%;
+      min-height: 46px;
+      margin: 4px 0 20px;
+      padding: 0 2px 10px;
+      border: 0;
+      border-bottom: 1px solid var(--accent-line);
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-current);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 9px;
+      cursor: pointer;
+      text-align: left;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: color .2s ease, border-color .2s ease, transform .2s ease;
+    }
+    .memory-entrance[hidden] { display: none; }
+    .memory-entrance:hover { color: var(--text-primary); border-color: var(--accent-mid); }
+    .memory-entrance:active { transform: translateY(1px); }
+    .memory-lead {
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      letter-spacing: .02em;
+    }
+    .memory-sparkle {
+      position: relative;
+      width: 14px;
+      height: 14px;
+      flex: 0 0 14px;
+      color: var(--accent);
+    }
+    .memory-sparkle,
+    .memory-chevron,
+    .memory-close::before {
+      background: currentColor;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center;
+      -webkit-mask-size: contain;
+      mask-size: contain;
+    }
+    .memory-sparkle {
+      -webkit-mask-image: url('./assets/icons/star-four.svg');
+      mask-image: url('./assets/icons/star-four.svg');
+    }
+    .memory-meta {
+      font-size: 12px;
+      color: var(--text-faint);
+      white-space: nowrap;
+    }
+    .memory-chevron {
+      width: 15px;
+      height: 15px;
+      color: rgba(139,115,85,.42);
+      -webkit-mask-image: url('./assets/icons/caret-right.svg');
+      mask-image: url('./assets/icons/caret-right.svg');
+    }
+
+    .memory-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(42,37,32,.15);
+      -webkit-backdrop-filter: blur(7px);
+      backdrop-filter: blur(7px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .24s ease, visibility .24s ease;
+    }
+    .memory-overlay.open { opacity: 1; visibility: visible; }
+    .memory-sheet {
+      width: min(100%, 560px);
+      max-height: min(76vh, 680px);
+      overflow: auto;
+      overscroll-behavior: contain;
+      padding: 24px 22px calc(28px + env(safe-area-inset-bottom));
+      border: 1px solid rgba(139,115,85,.1);
+      border-radius: 26px;
+      background: rgba(250,247,242,.94);
+      box-shadow: 0 22px 70px rgba(42,37,32,.14);
+      transform: translateY(18px) scale(.985);
+      transition: transform .28s cubic-bezier(.2,.7,.2,1);
+    }
+    .memory-overlay.open .memory-sheet { transform: translateY(0) scale(1); }
+    .memory-sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .memory-sheet-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0;
+      font-family: var(--font-current);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    .memory-close {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border: 1px solid rgba(139,115,85,.1);
+      border-radius: 50%;
+      background: rgba(255,255,255,.42);
+      color: var(--text-faint);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .memory-close::before {
+      content: '';
+      position: absolute;
+      inset: 9px;
+      -webkit-mask-image: url('./assets/icons/x.svg');
+      mask-image: url('./assets/icons/x.svg');
+    }
+    .memory-section + .memory-section { margin-top: 24px; }
+    .memory-section-label {
+      margin-bottom: 10px;
+      font-family: var(--font-current);
+      font-size: 12px;
+      color: var(--accent);
+      letter-spacing: .06em;
+    }
+    .memory-card {
+      position: relative;
+      padding: 16px 18px;
+      border: 1px solid rgba(139,115,85,.09);
+      border-radius: 18px;
+      background: rgba(255,255,255,.43);
+    }
+    .memory-card + .memory-card { margin-top: 10px; }
+    .memory-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-family: var(--font-accent);
+      font-size: 11px;
+      color: var(--text-faint);
+    }
+    .memory-card-mood {
+      color: var(--accent);
+      font-family: var(--font-system);
+    }
+    .memory-card p {
+      margin: 0;
+      font-family: var(--font-current);
+      font-size: 15px;
+      font-weight: 300;
+      line-height: 1.85;
+      color: var(--text-body);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    body.memory-open { overflow: hidden; }
+
     /* ===== Font specific ===== */
     html[data-font="serif"] .entry p,
     html[data-font="serif"] .entry-edit-area { color: rgba(42,37,32,0.93); font-weight: 400; }
@@ -835,6 +1009,13 @@
     @media (max-width: 480px) {
       header { padding-top: 36px; }
       h1 { font-size: 22px; }
+      .memory-overlay { padding: 10px; }
+      .memory-sheet { border-radius: 24px; }
+      .memory-meta { font-size: 11px; }
+    }
+
+    @media (min-width: 640px) {
+      .memory-overlay { align-items: center; }
     }
 
   </style>
@@ -897,6 +1078,15 @@
       </div>
     </div>
 
+    <button class="memory-entrance" id="memoryEntrance" type="button" hidden aria-haspopup="dialog" aria-controls="memoryOverlay">
+      <span class="memory-lead">
+        <span class="memory-sparkle" aria-hidden="true"></span>
+        <span>有旧念头来访</span>
+      </span>
+      <span class="memory-meta" id="memoryMeta"></span>
+      <span class="memory-chevron" aria-hidden="true"></span>
+    </button>
+
     <div id="month-tabs"></div>
     <div id="entries"></div>
   </div>
@@ -917,6 +1107,19 @@
   <div class="toast" id="toast">
     <div class="t-emoji" id="toastEmoji">✨</div>
     <div class="t-text" id="toastText">记下了</div>
+  </div>
+
+  <div class="memory-overlay" id="memoryOverlay" role="dialog" aria-modal="true" aria-labelledby="memoryTitle" aria-hidden="true">
+    <section class="memory-sheet" tabindex="-1">
+      <div class="memory-sheet-head">
+        <h2 class="memory-sheet-title" id="memoryTitle">
+          <span class="memory-sparkle" aria-hidden="true"></span>
+          旧念来访
+        </h2>
+        <button class="memory-close" id="memoryClose" type="button" aria-label="关闭旧念回顾"></button>
+      </div>
+      <div id="memoryContent"></div>
+    </section>
   </div>
 
   <footer>
@@ -1101,6 +1304,113 @@ function saveEntries(entries) {
   localStorage.setItem('xshan_journal', JSON.stringify(entries));
 }
 
+const memoryEntrance = document.getElementById('memoryEntrance');
+const memoryMeta = document.getElementById('memoryMeta');
+const memoryOverlay = document.getElementById('memoryOverlay');
+const memorySheet = memoryOverlay.querySelector('.memory-sheet');
+const memoryContent = document.getElementById('memoryContent');
+const memoryClose = document.getElementById('memoryClose');
+let memorySnapshot = null;
+let memoryReturnFocus = null;
+
+function escapeHTML(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function oldThoughtsForToday(entries, now = new Date()) {
+  const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const previousMonthEntries = entries.filter(entry => {
+    const date = new Date(entry.timestamp);
+    return date.getFullYear() === previousMonth.getFullYear()
+      && date.getMonth() === previousMonth.getMonth()
+      && date.getDate() === now.getDate();
+  }).sort((a, b) => b.timestamp - a.timestamp);
+
+  const onThisDayEntries = entries.filter(entry => {
+    const date = new Date(entry.timestamp);
+    return date.getFullYear() < now.getFullYear()
+      && date.getMonth() === now.getMonth()
+      && date.getDate() === now.getDate();
+  }).sort((a, b) => b.timestamp - a.timestamp);
+
+  const daySeed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+  const onThisDay = onThisDayEntries.length
+    ? onThisDayEntries[daySeed % onThisDayEntries.length]
+    : null;
+
+  return { previousMonthEntries, onThisDay };
+}
+
+function memoryCardHTML(entry) {
+  const date = new Date(entry.timestamp);
+  const dateLabel = `${date.getFullYear()}年${date.getMonth()+1}月${date.getDate()}日 · ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+  const mood = entry.mood && entry.mood !== '💭'
+    ? `<span class="memory-card-mood">${escapeHTML(entry.mood)}</span>`
+    : '';
+  return `<article class="memory-card">
+    <div class="memory-card-meta"><span>${dateLabel}</span>${mood}</div>
+    <p>${escapeHTML(entry.content)}</p>
+  </article>`;
+}
+
+function renderMemoryEntrance(entries) {
+  const isFiltering = Boolean(searchQuery || starOnly);
+  memorySnapshot = oldThoughtsForToday(entries);
+  const { previousMonthEntries, onThisDay } = memorySnapshot;
+  const hasMemory = previousMonthEntries.length > 0 || Boolean(onThisDay);
+  memoryEntrance.hidden = isFiltering || !hasMemory;
+  if (!hasMemory) return;
+
+  memoryMeta.textContent = previousMonthEntries.length
+    ? `上月今日 · ${previousMonthEntries.length} 条`
+    : '那年今日 · 1 条';
+
+  const sections = [];
+  if (previousMonthEntries.length) {
+    sections.push(`<section class="memory-section">
+      <div class="memory-section-label">上月今日 · ${previousMonthEntries.length} 条</div>
+      ${previousMonthEntries.map(memoryCardHTML).join('')}
+    </section>`);
+  }
+  if (onThisDay) {
+    sections.push(`<section class="memory-section">
+      <div class="memory-section-label">那年今日 · 随机一则</div>
+      ${memoryCardHTML(onThisDay)}
+    </section>`);
+  }
+  memoryContent.innerHTML = sections.join('');
+}
+
+function openMemoryOverlay() {
+  if (!memorySnapshot) return;
+  memoryReturnFocus = document.activeElement;
+  memoryOverlay.classList.add('open');
+  memoryOverlay.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('memory-open');
+  requestAnimationFrame(() => memorySheet.focus());
+}
+
+function closeMemoryOverlay() {
+  memoryOverlay.classList.remove('open');
+  memoryOverlay.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('memory-open');
+  if (memoryReturnFocus instanceof HTMLElement) memoryReturnFocus.focus();
+}
+
+memoryEntrance.addEventListener('click', openMemoryOverlay);
+memoryClose.addEventListener('click', closeMemoryOverlay);
+memoryOverlay.addEventListener('click', event => {
+  if (event.target === memoryOverlay) closeMemoryOverlay();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && memoryOverlay.classList.contains('open')) closeMemoryOverlay();
+});
+
 function fmtDate(ts) {
   const d = new Date(ts);
   const wd = ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
@@ -1194,6 +1504,7 @@ function renderJournal(keepScroll) {
   const tabsEl = document.getElementById('month-tabs');
   const scrollY = keepScroll ? window.scrollY : 0;
   const allEntries = getEntries();
+  renderMemoryEntrance(allEntries);
   let filtered = allEntries.map((entry, i) => ({ entry, i }));
   if (starOnly) filtered = filtered.filter(({ entry }) => entry.starred);
   if (searchQuery) {

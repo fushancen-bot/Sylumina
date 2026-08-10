@@ -1,4 +1,4 @@
-const CACHE = 'sylumina-journal-v25';
+const CACHE = 'sylumina-journal-v26';
 
 const PRECACHE = [
   './journal.html',
@@ -29,6 +29,9 @@ const PRECACHE = [
   './assets/tracker-stickers/hairwash.png',
   './assets/tracker-stickers/sprout.png',
   './assets/tracker-stickers/watercolor-wash.png',
+  './assets/icons/star-four.svg',
+  './assets/icons/caret-right.svg',
+  './assets/icons/x.svg',
 ];
 
 // Install: cache static assets (not HTML — HTML is always fetched fresh)
