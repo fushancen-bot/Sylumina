@@ -878,6 +878,17 @@
     html[data-font="system"] .entry-edit-area,
     html[data-font="system"] textarea { color: rgba(42,37,32,0.95); font-weight: 400; }
 
+    html[data-font="system-bold"] body { font-weight: 600; }
+    html[data-font="system-bold"] textarea,
+    html[data-font="system-bold"] .entry p,
+    html[data-font="system-bold"] .entry-edit-area,
+    html[data-font="system-bold"] #searchInput,
+    html[data-font="system-bold"] .memory-card p {
+      color: rgba(42,37,32,0.95);
+      font-weight: 600;
+    }
+    html[data-font="system-bold"] .entry p { font-size: 14.5px; }
+
     /* Match the heavier system-text feel on desktop without changing touch devices. */
     @media (hover: hover) and (pointer: fine) {
       html[data-font="system"] .entry p,
@@ -1170,9 +1181,14 @@ footerDaily.addEventListener('click', () => switchMode('daily'));
 const FONTS = [
   { key: 'serif',  label: '宋体', family: "'Noto Serif SC', 'Songti SC', serif" },
   { key: 'system', label: '系统', family: "-apple-system, 'Helvetica Neue', 'PingFang SC', sans-serif" },
+  { key: 'system-bold', label: '系统粗体', family: "-apple-system, 'Helvetica Neue', 'PingFang SC', sans-serif" },
   { key: 'mincho', label: '明朝体', family: "'Huiwen Mincho', 'Noto Serif SC', serif" },
 ];
-let fontIdx = parseInt(localStorage.getItem('xshan_font2') || '0');
+const savedFontKey = localStorage.getItem('xshan_font3');
+const legacyFontKeys = ['serif', 'system', 'mincho'];
+const legacyFontIdx = parseInt(localStorage.getItem('xshan_font2') || '0');
+const initialFontKey = savedFontKey || legacyFontKeys[legacyFontIdx] || 'serif';
+let fontIdx = Math.max(0, FONTS.findIndex(font => font.key === initialFontKey));
 
 const fontBtn = document.getElementById('fontBtn');
 const fontDropdown = document.getElementById('fontDropdown');
@@ -1207,14 +1223,14 @@ if (!THEMES[themeKey]) themeKey = 'red';
 
 function renderFontPicker() {
   fontDropdown.innerHTML = FONTS.map((f, i) =>
-    `<button class="font-option ${i === fontIdx ? 'active' : ''}" data-idx="${i}" style="font-family:${f.family}">${f.label}</button>`
+    `<button class="font-option ${i === fontIdx ? 'active' : ''}" data-idx="${i}" data-font-key="${f.key}" style="font-family:${f.family};font-weight:${f.key === 'system-bold' ? 600 : 400}">${f.label}</button>`
   ).join('');
 }
 
 function applyFont() {
   document.documentElement.style.setProperty('--font-current', FONTS[fontIdx].family);
   document.documentElement.setAttribute('data-font', FONTS[fontIdx].key);
-  localStorage.setItem('xshan_font2', fontIdx);
+  localStorage.setItem('xshan_font3', FONTS[fontIdx].key);
   renderFontPicker();
 }
 
